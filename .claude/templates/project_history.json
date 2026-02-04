@@ -1,0 +1,13 @@
+{
+  "version": "1.0",
+  "schema": "multi-agent-squad-history",
+  "project": "",
+  "created_at": "",
+  "updated_at": "",
+  "metadata": {
+    "total_entries": 0,
+    "agents_active": [],
+    "tags_used": []
+  },
+  "entries": []
+}

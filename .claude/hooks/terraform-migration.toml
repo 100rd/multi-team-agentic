@@ -1,0 +1,240 @@
+# Terraform Migration Workflow Hooks
+# Enforces quality gates and coordinates parallel migration agents
+
+# ========================================
+# 1. PRE-CONVERSION VALIDATION
+# ========================================
+
+[[hooks]]
+event = "PreToolUse"
+[hooks.matcher]
+tool_name = "Write"
+file_paths = ["terraform/**/*.tf"]
+command = """
+echo "🔍 Validating Terraform syntax..."
+cd $(dirname $CLAUDE_FILE_PATH)
+terraform fmt -check -diff $CLAUDE_FILE_PATH || {
+    echo "⚠️ Format issues detected - will auto-fix"
+}
+"""
+
+# ========================================
+# 2. POST-WRITE TERRAFORM VALIDATION
+# ========================================
+
+[[hooks]]
+event = "PostToolUse"
+run_in_background = true
+[hooks.matcher]
+tool_name = "Write"
+file_paths = ["terraform/**/*.tf"]
+command = """
+module_dir=$(dirname $CLAUDE_FILE_PATH)
+echo "✅ Running terraform validate on $module_dir"
+
+cd $module_dir
+terraform fmt $CLAUDE_FILE_PATH
+terraform validate || echo "❌ Validation failed for $module_dir"
+"""
+
+# ========================================
+# 3. PARALLEL PLAN AGGREGATION
+# ========================================
+
+[[hooks]]
+event = "SubagentStop"
+[hooks.matcher]
+agent_name = "terraform-migration-engineer"
+command = """
+echo "📊 Agent completed migration task"
+
+# Log completion to tracking file
+echo "[$(date)] Agent completed: $CLAUDE_AGENT_ID" >> .migration/agent-status.log
+
+# Check if all agents done
+total=$(cat .migration/expected-agents.txt 2>/dev/null || echo "0")
+completed=$(wc -l < .migration/agent-status.log 2>/dev/null || echo "0")
+
+if [ "$completed" -eq "$total" ] && [ "$total" -gt "0" ]; then
+    echo "🎉 All migration agents completed!"
+    echo "Running aggregate validation..."
+
+    # Aggregate all plans
+    > .migration/aggregate-plan.txt
+    for dir in terraform/*/; do
+        if [ -d "$dir" ]; then
+            echo "=== Plan for $dir ===" >> .migration/aggregate-plan.txt
+            (cd "$dir" && terraform init -backend=false >/dev/null 2>&1 && terraform plan -no-color 2>&1) >> .migration/aggregate-plan.txt
+        fi
+    done
+
+    echo "📋 Aggregate plan ready for review: .migration/aggregate-plan.txt"
+fi
+"""
+
+# ========================================
+# 4. APPLY SAFETY GATE
+# ========================================
+
+[[hooks]]
+event = "PreToolUse"
+block_tool_use_on_failure = true
+[hooks.matcher]
+tool_name = "Bash"
+args_regex = "terraform apply"
+command = """
+echo "🚨 TERRAFORM APPLY CHECKPOINT"
+echo "=============================="
+
+# Extract module directory from command
+module_dir=$(echo "$CLAUDE_TOOL_INPUT" | grep -oP '(?<=-chdir=)[^\s]+' || pwd)
+
+# Check if plan was reviewed
+if [ ! -f "$module_dir/.plan-approved" ]; then
+    echo "❌ No approved plan found for $module_dir"
+    echo "Run: terraform plan -out=tfplan && touch .plan-approved"
+    exit 1
+fi
+
+# Check dependency order
+if [ -f ".migration/apply-order.txt" ]; then
+    current=$(basename "$module_dir")
+    next_allowed=$(head -1 .migration/apply-order.txt)
+    if [ -n "$next_allowed" ] && [ "$current" != "$next_allowed" ]; then
+        echo "❌ Wrong apply order. Next module should be: $next_allowed"
+        exit 1
+    fi
+fi
+
+echo "✅ Apply gate passed for $module_dir"
+"""
+
+# ========================================
+# 5. POST-APPLY STATE VALIDATION
+# ========================================
+
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "Bash"
+args_regex = "terraform apply"
+command = """
+# Extract module directory from command
+module_dir=$(echo "$CLAUDE_TOOL_INPUT" | grep -oP '(?<=-chdir=)[^\s]+' || pwd)
+
+echo "🔍 Validating apply results..."
+
+cd "$module_dir"
+
+# Verify no drift
+terraform plan -detailed-exitcode
+exit_code=$?
+
+if [ $exit_code -eq 0 ]; then
+    echo "✅ Apply successful - state matches infrastructure"
+    # Mark as complete, remove from apply order
+    if [ -f "../.migration/apply-order.txt" ]; then
+        tail -n +2 "../.migration/apply-order.txt" > "../.migration/apply-order.tmp"
+        mv "../.migration/apply-order.tmp" "../.migration/apply-order.txt"
+    fi
+elif [ $exit_code -eq 2 ]; then
+    echo "⚠️ Drift detected after apply - manual review needed"
+fi
+
+# Log completion
+echo "[$(date)] Applied: $module_dir" >> ../.migration/apply-log.txt
+"""
+
+# ========================================
+# 6. CFN TEMPLATE ANALYSIS
+# ========================================
+
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "Read"
+file_paths = ["**/*.yaml", "**/*.json"]
+command = """
+# Check if this is a CloudFormation template
+if grep -q "AWSTemplateFormatVersion" "$CLAUDE_FILE_PATH" 2>/dev/null; then
+    echo "📋 CloudFormation template detected: $CLAUDE_FILE_PATH"
+
+    # Count resources
+    resource_count=$(grep -c "Type: AWS::" "$CLAUDE_FILE_PATH" 2>/dev/null || echo "0")
+    echo "   Resources: $resource_count"
+
+    # Check for exports
+    if grep -q "Outputs:" "$CLAUDE_FILE_PATH"; then
+        echo "   Has exports - check for cross-stack dependencies"
+    fi
+
+    # Check for imports
+    if grep -q "Fn::ImportValue" "$CLAUDE_FILE_PATH"; then
+        echo "   Has imports - must migrate dependencies first"
+    fi
+fi
+"""
+
+# ========================================
+# 7. MIGRATION PROGRESS TRACKING
+# ========================================
+
+[[hooks]]
+event = "Stop"
+run_in_background = true
+command = """
+if [ -d ".migration" ]; then
+    echo ""
+    echo "📊 Migration Session Summary"
+    echo "============================"
+    echo "Templates converted: $(find terraform -name '*.tf' 2>/dev/null | wc -l | tr -d ' ')"
+    echo "Modules created: $(find terraform -maxdepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')"
+    echo "Applies completed: $(wc -l < .migration/apply-log.txt 2>/dev/null | tr -d ' ' || echo 0)"
+    echo "Remaining: $(wc -l < .migration/apply-order.txt 2>/dev/null | tr -d ' ' || echo 0)"
+    echo ""
+fi
+"""
+
+# ========================================
+# 8. IMPORT COMMAND SAFETY
+# ========================================
+
+[[hooks]]
+event = "PreToolUse"
+[hooks.matcher]
+tool_name = "Bash"
+args_regex = "terraform import"
+command = """
+echo "🔄 Terraform Import Detected"
+echo "============================"
+echo "Importing: $CLAUDE_TOOL_INPUT"
+echo ""
+echo "⚠️ Import will modify state file"
+echo "Ensure you have state backup before proceeding"
+
+# Check for state backup
+module_dir=$(echo "$CLAUDE_TOOL_INPUT" | grep -oP '(?<=-chdir=)[^\s]+' || pwd)
+if [ ! -f "$module_dir/terraform.tfstate.backup" ]; then
+    echo "💡 Tip: Run 'cp terraform.tfstate terraform.tfstate.backup' first"
+fi
+"""
+
+# ========================================
+# 9. WORKSPACE ISOLATION CHECK
+# ========================================
+
+[[hooks]]
+event = "PreToolUse"
+[hooks.matcher]
+tool_name = "Bash"
+args_regex = "terraform (plan|apply|destroy)"
+command = """
+# Ensure we're not accidentally in wrong workspace
+current_workspace=$(terraform workspace show 2>/dev/null || echo "default")
+echo "📍 Current Terraform workspace: $current_workspace"
+
+if [ "$current_workspace" = "production" ] || [ "$current_workspace" = "prod" ]; then
+    echo "🚨 WARNING: Operating in PRODUCTION workspace!"
+    echo "Double-check all changes before proceeding"
+fi
+"""

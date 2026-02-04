@@ -1,0 +1,304 @@
+# Enterprise Workflow Automation Hooks
+# Enforces enterprise SDLC with automated checkpoints and quality gates
+
+# ========================================
+# 1. TEST-DRIVEN DEVELOPMENT ENFORCEMENT
+# ========================================
+
+[[hooks]]
+event = "PreToolUse"
+block_tool_use_on_failure = true
+[hooks.matcher]
+tool_name = "Write"
+file_paths = ["src/**/*.py", "src/**/*.js", "src/**/*.ts"]
+command = """
+# Block writing implementation without tests
+test_file=$(echo $CLAUDE_FILE_PATH | sed 's|src/|tests/test_|')
+if [[ ! -f "$test_file" ]]; then
+    echo "❌ TDD VIOLATION: No test file found at $test_file"
+    echo "📝 Create tests first! Use: /create-test $CLAUDE_FILE_PATH"
+    exit 1
+fi
+echo "✅ Test file exists. Proceeding with implementation."
+"""
+
+# ========================================
+# 2. AUTOMATED CODE QUALITY CHECKS
+# ========================================
+
+[[hooks]]
+event = "PostToolUse"
+run_in_background = true
+[hooks.matcher]
+tool_name = "Write"
+file_paths = ["**/*.py", "**/*.js", "**/*.ts"]
+command = """
+echo "🔍 Running automated quality checks..."
+
+# Language-specific linting and formatting
+if [[ $CLAUDE_FILE_PATH == *.py ]]; then
+    black $CLAUDE_FILE_PATH
+    ruff check --fix $CLAUDE_FILE_PATH
+    mypy $CLAUDE_FILE_PATH
+elif [[ $CLAUDE_FILE_PATH == *.js ]] || [[ $CLAUDE_FILE_PATH == *.ts ]]; then
+    eslint --fix $CLAUDE_FILE_PATH
+    prettier --write $CLAUDE_FILE_PATH
+fi
+
+# Security scan
+echo "🔒 Security scanning..."
+semgrep --config=auto $CLAUDE_FILE_PATH || true
+
+# Complexity check
+echo "📊 Checking complexity..."
+if [[ $CLAUDE_FILE_PATH == *.py ]]; then
+    radon cc -s $CLAUDE_FILE_PATH | grep -E "C \(|D \(|E \(|F \(" && echo "⚠️ High complexity detected!"
+fi
+"""
+
+# ========================================
+# 3. AUTOMATED TEST EXECUTION
+# ========================================
+
+[[hooks]]
+event = "PostToolUse"
+run_in_background = true
+[hooks.matcher]
+tool_name = "Write"
+file_paths = ["src/**/*", "tests/**/*"]
+command = """
+# Run relevant tests after code changes
+echo "🧪 Running automated tests..."
+
+# Determine test command based on project
+if [[ -f "pytest.ini" ]]; then
+    pytest -xvs --tb=short || echo "❌ Tests failed! Fix before continuing."
+elif [[ -f "package.json" ]]; then
+    npm test || echo "❌ Tests failed! Fix before continuing."
+fi
+
+# Update test coverage report
+echo "📊 Updating coverage report..."
+pytest --cov=src --cov-report=html --cov-report=term || true
+"""
+
+# ========================================
+# 4. SPRINT CEREMONY AUTOMATION
+# ========================================
+
+[[hooks]]
+event = "Notification"
+[hooks.matcher]
+time = "09:00"
+days = ["monday", "tuesday", "wednesday", "thursday", "friday"]
+command = """
+echo "📅 DAILY STANDUP TIME!"
+echo "====================" 
+./scripts/sprint-management.sh standup
+
+# Check for blocked PRs
+echo "🔍 Checking for blocked work..."
+gh pr list --json number,title,createdAt --jq '.[] | select((.createdAt | fromdateiso8601) < (now - 24*60*60)) | "⚠️ PR #\\(.number): \\(.title) needs attention"'
+
+# Remind about human checkpoints
+echo "❓ HUMAN CHECKPOINT: Any blockers or concerns to discuss?"
+"""
+
+[[hooks]]
+event = "Notification"
+[hooks.matcher]
+time = "15:00"
+days = ["friday"]
+command = """
+echo "🎯 SPRINT REVIEW REMINDER"
+echo "======================="
+./scripts/sprint-management.sh status
+echo "📋 Ready to demo completed features?"
+echo "Run: /sprint-review to start the ceremony"
+"""
+
+# ========================================
+# 5. PR REVIEW CYCLE ENFORCEMENT
+# ========================================
+
+[[hooks]]
+event = "PreToolUse"
+[hooks.matcher]
+tool_name = "Bash"
+args_regex = "git push|gh pr create"
+command = """
+# Enforce review readiness before PR creation
+echo "🔍 Checking PR readiness..."
+
+# Check if all tests pass
+if ! make test >/dev/null 2>&1; then
+    echo "❌ Tests must pass before creating PR"
+    exit 1
+fi
+
+# Check code coverage
+coverage=$(pytest --cov=src --cov-report=term 2>/dev/null | grep TOTAL | awk '{print $4}' | sed 's/%//' || echo "0")
+if [ "$coverage" -lt "80" ]; then
+    echo "❌ Code coverage is $coverage% (minimum: 80%)"
+    exit 1
+fi
+
+echo "✅ PR quality gates passed!"
+"""
+
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "Bash"
+args_regex = "gh pr create"
+command = """
+# Auto-assign reviewers and create review checklist
+pr_number=$(gh pr list --head $(git branch --show-current) --json number --jq '.[0].number')
+if [ -n "$pr_number" ]; then
+    echo "🔄 Setting up review process for PR #$pr_number"
+    
+    # Assign reviewers based on code changes
+    gh pr edit $pr_number --add-reviewer senior-engineer,security-team
+    
+    # Add review checklist as comment
+    gh pr comment $pr_number --body "## Review Checklist
+- [ ] Code follows project style guidelines
+- [ ] Tests are comprehensive and passing
+- [ ] Documentation is updated
+- [ ] Security considerations addressed
+- [ ] Performance impact assessed
+- [ ] No technical debt introduced
+
+Please check all items before approving."
+fi
+"""
+
+# ========================================
+# 6. DEPLOYMENT SAFETY CHECKS
+# ========================================
+
+[[hooks]]
+event = "UserPromptSubmit"
+block_tool_use_on_failure = true
+[hooks.matcher]
+content_regex = "deploy|release|production"
+command = """
+echo "🚨 DEPLOYMENT CHECKPOINT"
+echo "======================"
+
+# Check all quality gates
+echo "Checking deployment readiness..."
+
+# Run all tests
+if ! make test >/dev/null 2>&1; then
+    echo "❌ Tests failing - deployment blocked"
+    exit 1
+fi
+
+# Check for security vulnerabilities
+if ! safety check --json >/dev/null 2>&1; then
+    echo "❌ Security vulnerabilities found - deployment blocked"
+    exit 1
+fi
+
+# Check for pending migrations
+if git diff --name-only origin/main..HEAD | grep -q migrations/; then
+    echo "⚠️ Database migrations detected - ensure migration plan is ready"
+fi
+
+echo "❓ HUMAN CHECKPOINT: Confirm deployment approval (yes/no)"
+read -r response
+[[ "$response" == "yes" ]] || exit 1
+"""
+
+# ========================================
+# 7. PROGRESS TRACKING & REPORTING
+# ========================================
+
+[[hooks]]
+event = "Stop"
+run_in_background = true
+command = """
+# Log session activity for sprint tracking
+echo "[$(date)] Session completed" >> .sprint/activity.log
+
+# Update task progress if working on a specific story
+if [ -f ".current-story" ]; then
+    story_id=$(cat .current-story)
+    echo "📊 Updating progress for story $story_id"
+    # Update story status in tracking system
+fi
+
+# Generate quick progress summary
+echo "📈 Today's Progress:"
+git log --oneline --since="6am" | head -5
+"""
+
+# ========================================
+# 8. CONTINUOUS INTEGRATION
+# ========================================
+
+[[hooks]]
+event = "PostToolUse"
+run_in_background = true
+[hooks.matcher]
+tool_name = "Bash"
+args_regex = "git commit"
+command = """
+# Trigger CI pipeline locally before push
+echo "🔄 Running local CI checks..."
+
+# Run pre-push validation
+./scripts/ci-local.sh || echo "⚠️ Local CI failed - fix before pushing"
+
+# Update commit metrics
+commits_today=$(git log --since="6am" --oneline | wc -l)
+echo "📊 Commits today: $commits_today"
+"""
+
+# ========================================
+# 9. DOCUMENTATION ENFORCEMENT
+# ========================================
+
+[[hooks]]
+event = "PostToolUse"
+[hooks.matcher]
+tool_name = "Write"
+file_paths = ["src/**/*.py", "src/**/*.js", "src/**/*.ts"]
+command = """
+# Check if documentation needs updating
+echo "📝 Checking documentation..."
+
+# Extract public functions/classes
+if [[ $CLAUDE_FILE_PATH == *.py ]]; then
+    # Check for missing docstrings
+    python -m pydocstyle $CLAUDE_FILE_PATH || echo "⚠️ Missing documentation"
+fi
+
+# Remind to update API docs if applicable
+if grep -q "api\|endpoint\|route" $CLAUDE_FILE_PATH; then
+    echo "📖 Remember to update API documentation"
+fi
+"""
+
+# ========================================
+# 10. HUMAN-IN-THE-LOOP CHECKPOINTS
+# ========================================
+
+[[hooks]]
+event = "UserPromptSubmit"
+[hooks.matcher]
+content_regex = "merge|approve|ship"
+command = """
+echo "🤝 HUMAN APPROVAL REQUIRED"
+echo "========================"
+echo "Before proceeding, please confirm:"
+echo "- [ ] All review comments addressed"
+echo "- [ ] Tests passing and coverage adequate"
+echo "- [ ] Documentation updated"
+echo "- [ ] Product Owner approved functionality"
+echo ""
+echo "Type 'confirmed' to proceed:"
+read -r response
+[[ "$response" == "confirmed" ]] || exit 1
+"""

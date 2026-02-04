@@ -1,0 +1,199 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"🔍 Pre-write validation: Checking if tests exist for this file...\"'"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -q \"git commit\"; then echo \"🚨 HUMAN CHECKPOINT: Preparing to commit...\"; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qiE \"claude|anthropic|co-authored-by\"; then echo \"❌ BLOCKED: No Claude/Anthropic/AI mentions allowed in any git command. Remove all AI references.\" && exit 1; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"git push\" && echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"\\b(main|master)\\b\"; then echo \"❌ BLOCKED: Pushing to main/master is forbidden. Use a feature branch and create a PR.\" && exit 1; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"git merge.*(main|master)|git merge\\b\" && echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"(main|master)\"; then echo \"❌ BLOCKED: Direct merges to/from main/master are forbidden. Create a Pull Request instead.\" && exit 1; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"git checkout (main|master)\"; then echo \"⚠️ WARNING: Checked out main/master. Do NOT commit or merge directly. Create a feature branch.\"; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terraform (apply|destroy)\"; then echo \"🚨 TERRAFORM APPLY/DESTROY: Human approval required. Verify plan output before proceeding.\"; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terragrunt (apply|destroy|run-all.*apply|run-all.*destroy)\"; then echo \"🚨 TERRAGRUNT APPLY/DESTROY: Human approval required. Verify plan output before proceeding.\"; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qiE \"(password|secret|api_key|apikey|token|credential|private_key)[[:space:]]*=[[:space:]]*.\"; then echo \"❌ BLOCKED: Potential secret detected in command. Never hardcode secrets. Use environment variables or secret managers.\" && exit 1; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"git (add|commit)\" && echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"\\.(env|pem|key|credentials|secret)\" ; then echo \"⚠️ WARNING: Potentially sensitive file being committed. Verify no secrets are included.\"; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terraform state (rm|mv|push|replace-provider)\"; then echo \"🚨 STATE MODIFICATION: This modifies Terraform state. Ensure state is backed up before proceeding.\"; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terraform destroy\"; then echo \"💀 TERRAFORM DESTROY: This will DELETE infrastructure. Double-check the target and ensure this is intentional.\"; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terraform import\"; then echo \"📥 TERRAFORM IMPORT: Importing existing resource into state. Verify resource ID is correct.\"; fi'"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'if [[ \"$CLAUDE_FILE_PATH\" == *.md ]]; then echo \"📝 Documentation updated.\"; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'if [[ \"$CLAUDE_FILE_PATH\" == *.tf ]] || [[ \"$CLAUDE_FILE_PATH\" == *.hcl ]]; then echo \"🔧 Terraform/HCL file modified. Run terraform fmt and terraform validate before committing.\"; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'if [[ \"$CLAUDE_FILE_PATH\" == *.tf ]] && grep -qiE \"(password|secret|api_key|token|credential)[[:space:]]*=[[:space:]]*[^$]\" \"$CLAUDE_FILE_PATH\" 2>/dev/null; then echo \"⚠️ WARNING: Potential hardcoded secret in Terraform file. Use variables or secret manager references.\"; fi'"
+          }
+        ]
+      },
+      {
+        "matcher": "MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"🔄 Code changes detected.\"'"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": "qa-engineer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"✅ QA Agent completed testing.\"'"
+          }
+        ]
+      },
+      {
+        "matcher": "product-manager",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"📋 PM Agent completed. Please review the output.\"'"
+          }
+        ]
+      },
+      {
+        "matcher": "infrastructure-validator",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"🔍 Infrastructure Validator completed. Review deployment validation report.\"'"
+          }
+        ]
+      },
+      {
+        "matcher": "devops-engineer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"⚙️ DevOps Engineer completed. Infrastructure changes ready for validation.\"'"
+          }
+        ]
+      },
+      {
+        "matcher": "solution-architect",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"🏗️ Solution Architect completed. Architecture review done.\"'"
+          }
+        ]
+      },
+      {
+        "matcher": "simplifier",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"🪒 Simplifier completed. Review complexity challenges and simpler alternatives.\"'"
+          }
+        ]
+      },
+      {
+        "matcher": "best-practices-validator",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"📋 Best Practices Validator completed. Review validation report for issues.\"'"
+          }
+        ]
+      },
+      {
+        "matcher": "activity-tracker",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"📜 Activity Tracker completed. Project history updated.\"'"
+          }
+        ]
+      },
+      {
+        "matcher": "drift-detector",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"🔍 Drift Detector completed. Review drift report for inconsistencies.\"'"
+          }
+        ]
+      },
+      {
+        "matcher": "terraform-engineer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"🏗️ Terraform Engineer completed. Review module code, tests, and outputs.\"'"
+          }
+        ]
+      }
+    ],
+    "SubagentStart": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"🚀 Agent started. MANDATORY: (1) Read project/PROJECT_HISTORY.md on startup. (2) Write your actions to project/PROJECT_HISTORY.md + project/project_history.json BEFORE returning your response. You are responsible for self-tracking — no separate tracker agent will do it for you.\"'"
+          }
+        ]
+      }
+    ]
+  }
+}

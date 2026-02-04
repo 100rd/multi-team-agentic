@@ -1,0 +1,25 @@
+{
+  "mcpServers": {
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "" 
+      },
+      "description": "Allows the squad to manage PRs, Issues, and Repo data."
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/Users/lo/Develop/multi-agent-squad"],
+      "description": "Allows the squad to read/write files and navigate the directory."
+    },
+    "google-search": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-google-search"],
+      "env": {
+        "GOOGLE_SEARCH_API_KEY": ""
+      },
+      "description": "Allows the Architecture Lead to research latest tech/docs."
+    }
+  }
+}

@@ -1,0 +1,25 @@
+# Gemini CLI Configuration for Multi-Agent Squad
+
+[general]
+default_model = "gemini-2.0-flash"
+context_window = 1000000
+
+[commands]
+# Start a new feature workflow
+start-feature = "./gem/commands/start-feature.sh"
+
+# Check project status
+status = "./gem/commands/project-status.sh"
+
+# Run quality gates
+check = "./gem/hooks/quality-gates.sh"
+
+[hooks.post_tool_use]
+# This is the "Verify & Act" part of the loop
+match = { tool = "Write" }
+command = "./gem/commands/auto-fix.sh $CLAUDE_FILE_PATH 'npm test'"
+
+[prompts]
+# Reusable prompt fragments
+tdd_notice = "Remember: Write tests before implementation. No test, no code."
+security_notice = "Analyze all changes for security vulnerabilities using the Security Architect persona."
