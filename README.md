@@ -1,10 +1,10 @@
 # Multi-Agent Squad 🤖
 
-An intelligent orchestration system for Claude Code that adapts to your project structure and manages development through specialized AI agents.
+An intelligent orchestration system that adapts to your project structure and manages development through specialized AI agents. Supports **Claude Code**, **GitHub Copilot**, and **Gemini CLI**.
 
 ## 🌟 Overview
 
-Multi-Agent Squad transforms Claude Code into a complete software development team with enterprise-grade integrations. Simply start Claude in this directory, and it will:
+Multi-Agent Squad transforms AI coding assistants into a complete software development team with enterprise-grade integrations. It provides:
 
 1. **Ask you about your project** through natural conversation
 2. **Create the perfect structure** based on your needs
@@ -71,6 +71,31 @@ After setup, you'll have:
 - **📊 Sprint management** with review cycles
 - **🔔 Smart notifications** where you want them
 - **🔐 Security checks** and quality gates
+
+## 🤖 Multi-Platform Support
+
+This repo provides agent configurations for three AI coding assistants:
+
+| Platform | Config Location | Agent Format | Status |
+|----------|----------------|--------------|--------|
+| **Claude Code** | `.claude/agents/` | Markdown with YAML frontmatter | Full orchestration |
+| **GitHub Copilot** | `.github/agents/` | `.agent.md` with YAML frontmatter | Agent mode + instructions |
+| **Gemini CLI** | `gem/agents/` | Markdown | Commands + hooks |
+
+### GitHub Copilot Agents
+
+Use `@agent-name` in Copilot Chat to invoke a specialized agent:
+
+- `@solution-architect` - System design and architecture decisions
+- `@backend-engineer` - API development, databases, distributed systems
+- `@frontend-engineer` - UI/UX, performance, accessibility
+- `@devops-engineer` - CI/CD, infrastructure, Terraform, Kubernetes
+- `@security-expert` - Security auditing, compliance, IAM
+- `@qa-engineer` - Test strategy, automation, quality gates
+
+Path-specific instructions in `.github/instructions/` auto-apply when editing:
+- `terraform.instructions.md` - For `*.tf`, `*.hcl`, `*.tfvars` files
+- `kubernetes.instructions.md` - For K8s YAML manifests
 
 ## 🎯 How It Works
 

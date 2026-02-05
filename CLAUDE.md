@@ -130,6 +130,19 @@ multi-agent-squad/
 │   ├── technical-lead-engineer.md
 │   └── technical-program-manager.md
 │
+├── .github/                           # ═══ GITHUB COPILOT CONFIG ═══
+│   ├── copilot-instructions.md        # Global Copilot instructions
+│   ├── agents/                        # Custom Copilot agents
+│   │   ├── solution-architect.agent.md
+│   │   ├── backend-engineer.agent.md
+│   │   ├── frontend-engineer.agent.md
+│   │   ├── devops-engineer.agent.md
+│   │   ├── security-expert.agent.md
+│   │   └── qa-engineer.agent.md
+│   └── instructions/                  # Path-specific instructions
+│       ├── terraform.instructions.md
+│       └── kubernetes.instructions.md
+│
 ├── gem/                               # ═══ GEMINI AGENT CONFIG ═══
 │   ├── README.md
 │   ├── copilot-instructions.md
@@ -147,149 +160,25 @@ multi-agent-squad/
 │   └── hooks/
 │       └── quality-gates.sh
 │
+├── project/                           # ═══ USER PROJECTS (gitignored) ═══
+│   └── your-project/                  #   Created via /project command
 │
-├── project/                           # ═══ USER PROJECTS (ALL work goes here) ═══
-│   │
-│   ├── dns-operator/                  # DNS failover operator
-│   │   └── failover-operator-mvp-plan.md
-│   │
-│   ├── genai-enablement/              # GenAI consulting/enablement
-│   │   ├── README.md
-│   │   ├── docs/                      #   Role definition, roadmap, metrics
-│   │   ├── research/                  #   Solutions analysis, reference tables
-│   │   ├── solutions/ai-incident-agent/
-│   │   ├── templates/                 #   Assessment, playbook, ROI templates
-│   │   └── case-studies/
-│   │
-│   ├── h2v/                           # Video processing / transcoding
-│   │   ├── README.md
-│   │   ├── config.py
-│   │   ├── Dockerfile                 #   Standard Docker build
-│   │   ├── Dockerfile.nvidia-gpu      #   GPU-optimized build
-│   │   ├── Dockerfile.nvidia-gpu-base
-│   │   ├── src/                       #   Python source (main.py, actor_recognition, etc.)
-│   │   ├── ffmpeg/                    #   FFmpeg scripts and source
-│   │   ├── eks-mlops/                 #   EKS ML deployment
-│   │   │   ├── containers/
-│   │   │   ├── dags/                  #   Airflow DAGs
-│   │   │   ├── deployments/
-│   │   │   ├── helm/
-│   │   │   ├── k8s/
-│   │   │   ├── lambda/
-│   │   │   ├── scripts/
-│   │   │   └── terraform/
-│   │   └── docs/                      #   Deployment guides, migration docs
-│   │
-│   ├── measuring-controller/          # Kubernetes measuring controller (Go)
-│   │   ├── README.md
-│   │   ├── Makefile
-│   │   ├── Dockerfile
-│   │   ├── go.mod / go.sum
-│   │   ├── cmd/main.go                #   Entrypoint
-│   │   ├── api/v1alpha1/              #   CRD types
-│   │   ├── internal/                  #   Core logic
-│   │   │   ├── aws/                   #   AWS integration
-│   │   │   ├── controller/            #   K8s controllers
-│   │   │   ├── guardrails/            #   Safety mechanisms
-│   │   │   ├── jobs/                  #   Job management
-│   │   │   ├── measurement/           #   Measurement logic
-│   │   │   └── metrics/               #   Prometheus metrics
-│   │   ├── config/                    #   K8s manifests (CRD, RBAC, manager)
-│   │   ├── docs/                      #   Architecture, security docs
-│   │   └── test/                      #   E2E and util tests
-│   │
-│   ├── opsfleet/                      # OpsFleet infrastructure
-│   │   ├── README.md
-│   │   ├── architectural_design.md
-│   │   └── terraform/                 #   EKS, ArgoCD, Karpenter, VPC, etc.
-│   │
-│   ├── platform-design/               # Platform engineering design
-│   │   ├── README.md
-│   │   ├── CHANGELOG.md
-│   │   ├── apps/                      #   Application definitions
-│   │   │   ├── chains/ direct/ infra/ listeners/ mono/ protocols/
-│   │   │   └── cluster-roles/         #   Role-specific cluster apps
-│   │   ├── argocd/                    #   ArgoCD GitOps (all config)
-│   │   │   ├── bootstrap/             #     Multi-cluster bootstrap
-│   │   │   ├── cluster-envs/          #     Kustomize env overlays
-│   │   │   ├── overlays/              #     Role+env overlays
-│   │   │   └── workloads/             #     Per-team Application defs
-│   │   ├── checkov-policies/          #   Custom Checkov policies
-│   │   ├── database/migrations/       #   DB migrations
-│   │   ├── dns-monitor/               #   DNS monitoring (Go)
-│   │   ├── dns-sync/                  #   DNS synchronization
-│   │   ├── failover-controller/       #   Failover logic (Go)
-│   │   ├── helm/                      #   Helm charts
-│   │   ├── k8s/                       #   K8s manifests
-│   │   ├── kubernetes/                #   Karpenter, security, deployments
-│   │   ├── monitoring/dashboards/     #   Grafana dashboards
-│   │   ├── network-policies/          #   K8s network policies
-│   │   ├── scripts/                   #   Deploy, validate, cleanup
-│   │   ├── services/                  #   Example services
-│   │   ├── terraform/                 #   Terraform modules & environments
-│   │   ├── terragrunt/                #   Terragrunt live config
-│   │   │   ├── _envcommon/            #   Shared env configs
-│   │   │   ├── dev/ staging/ prod/ dr/
-│   │   │   └── terragrunt.hcl         #   Root config
-│   │   ├── tests/                     #   E2E and integration tests
-│   │   ├── tools/dns-admin/           #   DNS admin tooling
-│   │   └── docs/                      #   Architecture docs, runbooks
-│   │
-│   ├── snips/                         # Snips platform
-│   │   ├── core-devops-infra/         #   DevOps infrastructure
-│   │   │   ├── argocd-apps/
-│   │   │   ├── argocd-examples/
-│   │   │   ├── grafana/
-│   │   │   ├── helm/
-│   │   │   ├── kubernetes/
-│   │   │   ├── terraform/
-│   │   │   └── scripts/
-│   │   └── core-snips-registry/       #   Service registry
-│   │       ├── argocd/
-│   │       ├── ecr/
-│   │       ├── external-secrets/
-│   │       ├── helm-charts/
-│   │       ├── helm-values/
-│   │       └── scripts/
-│   │
-│   ├── transcoding-service/           # Transcoding orchestrator (Go)
-│   │   ├── Dockerfile
-│   │   ├── config.yaml
-│   │   ├── go.mod
-│   │   ├── plan.md
-│   │   ├── cmd/orchestrator/          #   CLI entrypoint
-│   │   ├── deploy/k8s/               #   K8s deployment manifests
-│   │   └── internal/                  #   Core packages
-│   │       ├── analyzer/ api/ assembly/ config/ k8s/
-│   │       ├── logging/ metrics/ models/ notifications/
-│   │       ├── orchestrator/ queue/ repository/
-│   │       ├── state/ storage/ tmdb/
-│   │
-│   ├── infra-design/                  # Infrastructure design visualizer
-│   │   ├── index.html / index-corrected.html
-│   │   └── data-model-corrected.js
-│   │
-│   └── measuring-controller.backup/   # Backup of measuring-controller
-│
-└── archive/                           # ═══ ARCHIVED FILES ═══
+└── archive/                           # ═══ ARCHIVED FILES (gitignored) ═══
 ```
 
 ### Key File Locations Quick Reference
 
 | What | Where |
 |------|-------|
-| Agent definitions | `.claude/agents/{category}/{name}.md` |
+| Claude agents | `.claude/agents/{category}/{name}.md` |
+| Copilot agents | `.github/agents/{name}.agent.md` |
+| Copilot instructions | `.github/copilot-instructions.md` |
 | Slash commands | `.claude/commands/{name}.md` |
 | Safety hooks | `.claude/settings.json` |
 | Git hooks | `scripts/setup-git-hooks.sh` |
 | Workflow docs | `docs/workflows/` |
 | Agent templates | `templates/` |
-| ArgoCD config | `project/platform-design/argocd/` |
-| Terragrunt live | `project/platform-design/terragrunt/` |
-| Terraform modules | `project/platform-design/terraform/` |
-| K8s manifests | `project/platform-design/k8s/` |
-| Network policies | `project/platform-design/network-policies/` |
-| Checkov policies | `project/platform-design/checkov-policies/` |
+| Gemini config | `gem/` |
 | Project history | `project/PROJECT_HISTORY.md` + `project/project_history.json` |
 
 ## 🔄 Primary Workflows
