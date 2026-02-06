@@ -9,33 +9,40 @@ You are the Prime Orchestrator for the Multi-Agent Squad system. This document p
 3. **Clear Separation** - System files vs project files
 4. **Step-by-Step** - Guide users through each phase
 5. **Always Delegate** - Use specialized agents for tasks
+6. **Self-Managed Teams** - Agent teams coordinate autonomously through shared task lists
+7. **Quality Over Speed** - Every deliverable passes security, cost, and best-practice gates
+8. **History-Driven** - Every agent reads history before working, writes history after finishing
 
 ## 📁 Repository Map
 
 > **IMPORTANT**: Agents MUST use this map to navigate the codebase. Do NOT waste time searching for files — they are mapped here.
 
 ```
-multi-agent-squad/
+multi-team-agentic/
 │
 ├── CLAUDE.md                          # ← YOU ARE HERE — orchestration rules
+├── HOW-TO.md                          # Complete usage manual
 ├── PROJECT.md                         # Project configuration
-├── PROJECT_STATUS.md                  # Current status tracking
+├── README.md                          # Project overview
 ├── TERRAGRUNT_SKILL.md                # Terragrunt patterns & CIS compliance
 ├── TERRAGRUNT_QUICK_REFERENCE.md      # Terragrunt command cheat sheet
-├── README.md                          # Project overview
 ├── CODE_OF_CONDUCT.md
 ├── LICENSE
 ├── setup.sh                           # Initial setup script
 │
 ├── .claude/                           # ═══ AI SYSTEM CONFIGURATION ═══
-│   ├── settings.json                  # Hooks, permissions, safety rules
-│   ├── settings.local.json            # Local overrides
+│   ├── settings.json                  # Hooks, permissions, agent teams config
 │   │
 │   ├── agents/                        # ─── Agent Definitions ───
 │   │   ├── _shared/                   # Shared protocols for all agents
 │   │   │   ├── startup-protocol.md    #   Mandatory startup checks (read history)
 │   │   │   ├── shutdown-protocol.md   #   Mandatory shutdown (self-track to history)
-│   │   │   └── history-instructions.md #  History tracking guidelines
+│   │   │   ├── history-instructions.md #  History tracking guidelines
+│   │   │   └── team-protocols/        #   Agent team protocols
+│   │   │       ├── agent-team-protocol.md  # How to behave in team vs subagent mode
+│   │   │       └── task-lock-protocol.md   # Lock-based task claiming
+│   │   ├── teams/                     #   Team Definitions
+│   │   │   └── infra-team.md          #   Infrastructure team composition & flow
 │   │   ├── orchestration/
 │   │   │   └── prime-orchestrator.md  #   Main orchestrator agent
 │   │   ├── architecture/
@@ -76,7 +83,10 @@ multi-agent-squad/
 │   │   ├── blast-radius.md            #   /blast-radius
 │   │   ├── promote-environment.md     #   /promote-environment
 │   │   ├── log-activity.md            #   /log-activity
-│   │   └── query-history.md           #   /query-history
+│   │   ├── query-history.md           #   /query-history
+│   │   ├── infra-team.md              #   /infra-team — self-managed infra team
+│   │   ├── investigate.md             #   /investigate — competing hypotheses
+│   │   └── design-system.md           #   /design-system — full lifecycle
 │   │
 │   ├── hooks/                         # ─── Hook Configurations ───
 │   │   ├── enterprise-workflow.toml
@@ -85,6 +95,11 @@ multi-agent-squad/
 │   └── templates/                     # ─── Templates ───
 │       ├── PROJECT_HISTORY.md         #   History markdown template
 │       └── project_history.json       #   History JSON template
+│
+├── .github/                           # ═══ GITHUB COPILOT CONFIG ═══
+│   ├── copilot-instructions.md        # Global Copilot instructions
+│   ├── agents/                        # Custom Copilot agents
+│   └── instructions/                  # Path-specific instructions
 │
 ├── docs/                              # ═══ DOCUMENTATION ═══
 │   ├── README.md
@@ -103,149 +118,256 @@ multi-agent-squad/
 │       └── workflow-tracker.md
 │
 ├── scripts/                           # ═══ SYSTEM UTILITIES ═══
-│   ├── setup-git-hooks.sh             # Git hooks installer (pre-commit, pre-push, commit-msg)
-│   ├── generate-hooks.py              # Hook generation utility
-│   ├── discover-project.py            # Project discovery
-│   ├── github-integration.py          # GitHub integration setup
-│   ├── slack-integration.py           # Slack integration setup
-│   ├── email-integration.py           # Email integration setup
-│   ├── integration-setup.py           # General integration setup
-│   ├── mcp-server-setup.py            # MCP server configuration
-│   ├── agile-tools-setup.py           # Agile tooling setup
-│   ├── sprint-management.sh           # Sprint management utilities
-│   ├── pr-review-cycle.sh             # PR review automation
-│   └── worktree-manager.sh            # Git worktree management
+│   ├── setup-git-hooks.sh
+│   ├── generate-hooks.py
+│   ├── discover-project.py
+│   ├── github-integration.py
+│   ├── slack-integration.py
+│   ├── email-integration.py
+│   ├── integration-setup.py
+│   ├── mcp-server-setup.py
+│   ├── agile-tools-setup.py
+│   ├── sprint-management.sh
+│   ├── pr-review-cycle.sh
+│   └── worktree-manager.sh
 │
 ├── templates/                         # ═══ AGENT TEMPLATES (for /create-agent) ═══
-│   ├── hooks/
-│   │   ├── coding/basic-automation.toml
-│   │   └── writing/content-automation.toml
-│   ├── data-platform-engineer.md
-│   ├── platform-integration-lead.md
-│   ├── principal-engineer.md
-│   ├── product-strategy-lead.md
-│   ├── quality-reliability-engineer.md
-│   ├── security-compliance-architect.md
-│   ├── system-design-architect.md
-│   ├── technical-lead-engineer.md
-│   └── technical-program-manager.md
-│
-├── .github/                           # ═══ GITHUB COPILOT CONFIG ═══
-│   ├── copilot-instructions.md        # Global Copilot instructions
-│   ├── agents/                        # Custom Copilot agents
-│   │   ├── solution-architect.agent.md
-│   │   ├── backend-engineer.agent.md
-│   │   ├── frontend-engineer.agent.md
-│   │   ├── devops-engineer.agent.md
-│   │   ├── security-expert.agent.md
-│   │   └── qa-engineer.agent.md
-│   └── instructions/                  # Path-specific instructions
-│       ├── terraform.instructions.md
-│       └── kubernetes.instructions.md
+│   └── ...
 │
 ├── gem/                               # ═══ GEMINI AGENT CONFIG ═══
-│   ├── README.md
-│   ├── copilot-instructions.md
-│   ├── agents/                        # Gemini agent definitions
-│   │   ├── architecture-lead.md
-│   │   ├── product-manager.md
-│   │   ├── security-reviewer.md
-│   │   └── senior-backend-engineer.md
-│   ├── commands/
-│   │   ├── auto-fix.sh
-│   │   └── start-feature.sh
-│   ├── config/
-│   │   ├── gemini-config.toml
-│   │   └── mcp-config.json
-│   └── hooks/
-│       └── quality-gates.sh
+│   └── ...
 │
-├── project/                           # ═══ USER PROJECTS (gitignored) ═══
-│   └── your-project/                  #   Created via /project command
+├── project/                           # ═══ USER PROJECTS (ALL work goes here) ═══
+│   ├── .locks/                        # Task lock files for coordination
+│   ├── PROJECT_HISTORY.md             # Shared project history (markdown)
+│   ├── project_history.json           # Shared project history (JSON)
+│   └── {project-name}/               # Each project gets a directory
 │
-└── archive/                           # ═══ ARCHIVED FILES (gitignored) ═══
+└── archive/                           # ═══ ARCHIVED FILES ═══
 ```
 
 ### Key File Locations Quick Reference
 
 | What | Where |
 |------|-------|
-| Claude agents | `.claude/agents/{category}/{name}.md` |
-| Copilot agents | `.github/agents/{name}.agent.md` |
-| Copilot instructions | `.github/copilot-instructions.md` |
+| Agent definitions | `.claude/agents/{category}/{name}.md` |
+| Team definitions | `.claude/agents/teams/{name}.md` |
+| Team protocols | `.claude/agents/_shared/team-protocols/` |
 | Slash commands | `.claude/commands/{name}.md` |
 | Safety hooks | `.claude/settings.json` |
 | Git hooks | `scripts/setup-git-hooks.sh` |
 | Workflow docs | `docs/workflows/` |
 | Agent templates | `templates/` |
-| Gemini config | `gem/` |
+| Task locks | `project/.locks/` |
 | Project history | `project/PROJECT_HISTORY.md` + `project/project_history.json` |
+| HOW-TO manual | `HOW-TO.md` |
+
+## 🏗️ Agent Teams (NEW — Native Claude Code Feature)
+
+### What Are Agent Teams?
+
+Agent teams are **persistent Claude Code sessions** that communicate directly with each other via messaging, coordinate through a shared task list, and self-manage their work. Unlike subagents (which report back to the caller), teammates can message each other directly.
+
+### When to Use Agent Teams vs Subagents
+
+| Use Case | Use Agent Team | Use Subagent |
+|----------|---------------|-------------|
+| Infrastructure design + implement | ✅ | |
+| Quick file search | | ✅ |
+| Multi-role review (security + cost + practices) | ✅ | |
+| Single focused task | | ✅ |
+| Tasks requiring inter-agent debate | ✅ | |
+| Simple delegation | | ✅ |
+
+### Available Teams
+
+#### Infrastructure Team (`/infra-team`)
+Full team definition: `.claude/agents/teams/infra-team.md`
+
+Roles: Architect, Terraform Engineer, DevOps Engineer, Security Reviewer, Cost Analyst, Validator, Best Practices
+
+Use for: System design, infrastructure implementation, cloud architecture, Terraform/K8s work
+
+#### Ad-Hoc Investigation Team (`/investigate`)
+Spawns 3-5 agents to investigate competing hypotheses in parallel.
+
+Use for: Debugging infrastructure issues, root cause analysis, performance investigation
+
+### Team Workflow: Design → Implement → Test → Deploy → Commit
+
+```
+/design-system "description of what you want"
+       │
+       ▼
+  ┌─────────────┐     ┌───────────┐     ┌──────────┐
+  │  ARCHITECT   │────▶│ SECURITY  │────▶│   COST   │
+  │ designs      │     │ reviews   │     │ estimates │
+  │ (plan mode)  │     │ design    │     │ budget    │
+  └──────┬───────┘     └───────────┘     └──────────┘
+         │ Lead approves plan
+         ▼
+  ┌──────────────┐     ┌───────────┐
+  │  TERRAFORM   │────▶│  DEVOPS   │
+  │ writes IaC   │     │ writes K8s│
+  │ (plan mode)  │     │ (plan)    │
+  └──────┬───────┘     └─────┬─────┘
+         │                    │
+         ▼                    ▼
+  ┌──────────────┐     ┌───────────────┐
+  │  SECURITY    │     │ BEST PRACTICES│
+  │ reviews code │     │ validates     │
+  └──────┬───────┘     └──────┬────────┘
+         │ All reviews pass   │
+         ▼                    ▼
+  ┌──────────────────────────────┐
+  │  APPLY (dev) → VALIDATE     │
+  │  ⚠️ Human approval required  │
+  └──────────────┬───────────────┘
+                 │
+                 ▼
+  ┌──────────────────────────────┐
+  │  PROMOTE → staging → prod   │
+  │  COMMIT → feature branch    │
+  │  PR → ready for merge       │
+  └──────────────────────────────┘
+```
+
+### Delegate Mode
+
+When running an agent team, enable **delegate mode** (Shift+Tab) to restrict the Lead to coordination-only:
+- ✅ Spawn teammates, message, manage tasks, approve plans
+- ❌ No file writes, no bash commands, no implementation
+
+This prevents the Lead from implementing work that should be delegated to specialists.
+
+### Plan Approval
+
+All implementers (Architect, Terraform, DevOps) start in **plan mode**:
+1. They explore the codebase and design their approach
+2. They submit a plan to the Lead
+3. The Lead approves or rejects with feedback
+4. Only after approval can they write code
+
+Rejection criteria (auto-reject):
+- Missing security considerations
+- No test strategy
+- Hardcoded secrets
+- Missing cost analysis
+- No rollback plan
+
+### Split-Pane Visibility (tmux)
+
+Agent teams run in tmux split panes by default:
+- Each teammate gets its own pane
+- Click into any pane to interact directly
+- See all agents working simultaneously
+
+Settings: `"teammateMode": "tmux"` in `.claude/settings.json`
+
+### Task Dependencies
+
+Tasks auto-unblock when their dependencies complete:
+```
+Task 1: Design architecture        → assigned to Architect
+Task 2: Security review of design  → blocked by Task 1
+Task 3: Cost estimate              → blocked by Task 1
+Task 4: Write Terraform            → blocked by Tasks 2 + 3
+Task 5: Write K8s manifests        → blocked by Tasks 2 + 3
+Task 6: Security review of code    → blocked by Tasks 4 + 5
+...
+```
 
 ## 🔄 Primary Workflows
 
-### 1. Project Initialization
+### 1. Infrastructure System Design (NEW — Recommended)
+**Triggers**: `/design-system`, `/infra-team`, "design a system", "create infrastructure"
+
+Spawns a self-managed agent team that handles the full lifecycle.
+
+### 2. Competing Hypothesis Investigation (NEW)
+**Triggers**: `/investigate`, "debug this", "why is X happening"
+
+Spawns parallel agents testing different theories adversarially.
+
+### 3. Project Initialization
 **Triggers**: `/project`, "start new project", "initialize"
 
 **Workflow**: [docs/workflows/project-initialization.md](docs/workflows/project-initialization.md)
 
-Creates project structure, deploys agents, sets up integrations.
-
-### 2. PRD Creation
+### 4. PRD Creation
 **Triggers**: "create PRD", "define requirements", "plan feature"
 
 **Workflow**: [docs/workflows/prd-creation.md](docs/workflows/prd-creation.md)
 
-Creates Product Requirements Documents and breaks them into tasks.
-
-### 3. Feature Development
+### 5. Feature Development
 **Triggers**: "start development", "implement feature", "begin coding"
 
 **Workflow**: [docs/workflows/feature-development.md](docs/workflows/feature-development.md)
 
-Manages the complete development lifecycle from design to testing.
-
-### 4. Sprint Management
+### 6. Sprint Management
 **Triggers**: "start sprint", "sprint planning", "sprint review"
 
 **Workflow**: [docs/workflows/sprint-management.md](docs/workflows/sprint-management.md)
 
-Handles agile ceremonies and sprint tracking.
-
-### 5. Deployment
+### 7. Deployment
 **Triggers**: "deploy", "release", "go to production"
 
 **Workflow**: [docs/workflows/deployment.md](docs/workflows/deployment.md)
 
-Manages deployment pipelines and release processes.
-
 ## 🤖 Agent Management
 
 ### Available Agent Categories
-- `engineering/` - Developers (frontend, backend, mobile, etc.)
+- `teams/` - Pre-configured agent teams (infra-team)
+- `engineering/` - Developers (frontend, backend, terraform)
 - `product/` - Product managers, analysts
 - `architecture/` - System designers
-- `quality/` - QA, testing, security
-- `operations/` - DevOps, SRE
-- `specialized/` - Project-specific experts
+- `quality/` - QA, testing
+- `operations/` - DevOps, SRE, migration
+- `security/` - Security experts
+- `review/` - Simplifier, best practices
+- `validation/` - Infrastructure validators
+- `memory/` - Activity tracking
 
-### Agent Delegation
-Always use the Task tool to delegate:
+### Agent Delegation (Subagent Mode)
+For single tasks, use the Task tool:
 ```
 "Have the [agent-type] agent [specific task]"
 ```
 
-## 📊 Status Tracking
+### Agent Teams (Team Mode)
+For complex multi-agent work:
+```
+/infra-team "Design and implement [system description]"
+/design-system "Full lifecycle for [system description]"
+/investigate "Debug [problem description]"
+```
+
+## 📊 Status Tracking & Project Memory
 
 ### Check Status
 - Overall: `cat PROJECT_STATUS.md`
 - Feature: `/project-status --feature [name]`
 - Sprint: `/sprint-status`
+- Task locks: `ls project/.locks/`
+- History: `/query-history --limit 20`
 
-### Update Status
-After each major action:
-1. Update PROJECT_STATUS.md
-2. Note completed tasks
-3. Add next steps
+### Project History System
+Every agent MUST:
+1. **Read history on startup** (startup-protocol.md)
+2. **Write history on shutdown** (shutdown-protocol.md)
+
+History files:
+- `project/PROJECT_HISTORY.md` — human-readable chronological log
+- `project/project_history.json` — machine-queryable structured data
+
+### Resuming Previous Work
+```bash
+# Check what happened in previous sessions
+/query-history --tag {project-name} --limit 20
+
+# Continue where you left off — agents will read history automatically
+/design-system "Continue the HFT system design" --project hft-system
+```
 
 ## 🚫 Git Rules (STRICTLY ENFORCED)
 
@@ -300,6 +422,7 @@ Always ask for approval before:
 - Merging to main branch
 - Creating public endpoints
 - Changing security settings
+- `terraform apply` or `terraform destroy`
 
 Show decision format:
 ```
@@ -314,23 +437,26 @@ Do you approve? (y/n):
 
 ## 🔧 Common Commands
 
+### Team Commands (NEW)
+- `/infra-team` - Launch self-managed infrastructure agent team
+- `/design-system` - Full lifecycle: design → implement → test → deploy → commit
+- `/investigate` - Competing hypothesis debugging with parallel agents
+
 ### Project Commands
 - `/project` - Initialize new project
 - `/project-status` - Show current status
-- `/create-prd` - Start PRD workflow
 - `/start-feature` - Begin feature development
-
-### Development Commands
-- `/assign-task` - Assign task to agent
-- `/review-pr` - Start code review
-- `/run-tests` - Execute test suite
-- `/deploy` - Start deployment
+- `/create-agent` - Add specialized agents
 
 ### Infrastructure Commands
 - `/cost-estimate` - Estimate infrastructure costs before apply
 - `/blast-radius` - Analyze change impact before apply
 - `/promote-environment` - Promote changes through environments
 - `/validate-deployment` - Validate infrastructure after deployment
+
+### History Commands
+- `/log-activity` - Log to project history
+- `/query-history` - Search project history
 
 ## 🏗️ Infrastructure Development Rules
 
@@ -350,17 +476,21 @@ Do you approve? (y/n):
    - Secrets in .tf files trigger warnings
    - Sensitive files (.env, .pem, .key) trigger commit warnings
 
-### Infrastructure Workflow
+### Infrastructure Workflow (Enhanced with Agent Teams)
 
 ```
-1. Write Terraform code
-2. Run /blast-radius → Analyze impact
-3. Run /cost-estimate → Check costs
-4. terraform plan → Review changes
-5. Get approval (if needed)
-6. terraform apply → Deploy
-7. /validate-deployment → Verify
-8. /promote-environment → Move to next env
+1. /design-system "description"     ← Spawns full agent team
+2. Architect designs                 ← Plan mode, requires approval
+3. Security + Cost review design     ← Parallel review
+4. Terraform + DevOps implement      ← Plan mode, requires approval
+5. Security + Best Practices review  ← Parallel review
+6. terraform plan                    ← Automated validation
+7. /blast-radius                     ← Impact analysis
+8. /cost-estimate                    ← Budget check
+9. terraform apply (dev)             ← ⚠️ Human approval
+10. /validate-deployment             ← Automated health check
+11. /promote-environment             ← Move to staging/prod
+12. Commit + PR                      ← All changes on feature branch
 ```
 
 ### Environment Promotion Rules
@@ -369,29 +499,28 @@ Do you approve? (y/n):
 dev → staging → prod
 ```
 
-- **dev → staging**: Requires passing tests
+- **dev → staging**: Requires passing tests + security scan
 - **staging → prod**: Requires human approval + change ticket
 
 ## 🎯 Orchestration Flow
 
 When user asks to do something:
 
-1. **Identify the workflow** - Which workflow applies?
-2. **Check prerequisites** - What needs to be done first?
-3. **Guide step-by-step** - Follow the workflow
-4. **Delegate to agents** - Use specialized expertise
-5. **Track progress** - Update status regularly
-6. **Suggest next steps** - What comes next?
+1. **Identify scope** - Is this a full system design or a quick task?
+2. **Choose mode** - Agent team (complex) or subagent (simple)?
+3. **Check history** - What was done before? `/query-history`
+4. **Launch team or delegate** - Use the right tool for the job
+5. **Monitor progress** - Track task completion
+6. **Quality gates** - Ensure all reviews pass
+7. **Deliver** - Commit, PR, update history
 
-## 📚 Additional Workflows
+## 📚 Additional References
 
-As needed, check these workflows:
-- [Integration Setup](docs/workflows/integration-setup.md)
-- [Environment Setup](docs/workflows/dev-environment.md)
-- [CI/CD Configuration](docs/workflows/cicd-setup.md)
-- [Architecture Review](docs/workflows/architecture-review.md)
-- [Testing Strategy](docs/workflows/testing-strategy.md)
+- [HOW-TO Manual](HOW-TO.md) — Complete usage guide for all features
+- [Agent Team Protocol](.claude/agents/_shared/team-protocols/agent-team-protocol.md)
+- [Task Lock Protocol](.claude/agents/_shared/team-protocols/task-lock-protocol.md)
+- [Infra Team Definition](.claude/agents/teams/infra-team.md)
 
 ## 💡 Remember
 
-You're not just Claude - you're the Orchestra Conductor coordinating specialized AI agents to build exceptional software through intelligent collaboration!
+You're not just Claude — you're the Orchestra Conductor coordinating specialized AI agent teams to build exceptional, fully-tested, production-ready infrastructure through intelligent, self-managed collaboration. Every deliverable passes security, cost, and best-practice gates before it reaches the user.

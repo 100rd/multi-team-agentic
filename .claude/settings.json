@@ -1,4 +1,8 @@
 {
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
+  "teammateMode": "tmux",
   "hooks": {
     "PreToolUse": [
       {
@@ -6,7 +10,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'echo \"🔍 Pre-write validation: Checking if tests exist for this file...\"'"
+            "command": "bash -c 'echo \"PRE_WRITE_CHECK: file=$CLAUDE_FILE_PATH status=validating\"'"
           }
         ]
       },
@@ -15,51 +19,51 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -q \"git commit\"; then echo \"🚨 HUMAN CHECKPOINT: Preparing to commit...\"; fi'"
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -q \"git commit\"; then echo \"CHECKPOINT: type=git_commit action=review_required\"; fi'"
           },
           {
             "type": "command",
-            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qiE \"claude|anthropic|co-authored-by\"; then echo \"❌ BLOCKED: No Claude/Anthropic/AI mentions allowed in any git command. Remove all AI references.\" && exit 1; fi'"
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qiE \"claude|anthropic|co-authored-by\"; then echo \"BLOCKED: rule=no_ai_mentions detail=Remove all AI references from git commands\" && exit 1; fi'"
           },
           {
             "type": "command",
-            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"git push\" && echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"\\b(main|master)\\b\"; then echo \"❌ BLOCKED: Pushing to main/master is forbidden. Use a feature branch and create a PR.\" && exit 1; fi'"
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"git push\" && echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"\\b(main|master)\\b\"; then echo \"BLOCKED: rule=no_push_main detail=Use feature branch and create PR\" && exit 1; fi'"
           },
           {
             "type": "command",
-            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"git merge.*(main|master)|git merge\\b\" && echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"(main|master)\"; then echo \"❌ BLOCKED: Direct merges to/from main/master are forbidden. Create a Pull Request instead.\" && exit 1; fi'"
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"git merge.*(main|master)|git merge\\b\" && echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"(main|master)\"; then echo \"BLOCKED: rule=no_merge_main detail=Create a Pull Request instead\" && exit 1; fi'"
           },
           {
             "type": "command",
-            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"git checkout (main|master)\"; then echo \"⚠️ WARNING: Checked out main/master. Do NOT commit or merge directly. Create a feature branch.\"; fi'"
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"git checkout (main|master)\"; then echo \"WARNING: rule=checkout_main detail=Do NOT commit or merge directly\"; fi'"
           },
           {
             "type": "command",
-            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terraform (apply|destroy)\"; then echo \"🚨 TERRAFORM APPLY/DESTROY: Human approval required. Verify plan output before proceeding.\"; fi'"
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terraform (apply|destroy)\"; then echo \"CHECKPOINT: type=terraform_apply action=human_approval_required severity=critical\"; fi'"
           },
           {
             "type": "command",
-            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terragrunt (apply|destroy|run-all.*apply|run-all.*destroy)\"; then echo \"🚨 TERRAGRUNT APPLY/DESTROY: Human approval required. Verify plan output before proceeding.\"; fi'"
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terragrunt (apply|destroy|run-all.*apply|run-all.*destroy)\"; then echo \"CHECKPOINT: type=terragrunt_apply action=human_approval_required severity=critical\"; fi'"
           },
           {
             "type": "command",
-            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qiE \"(password|secret|api_key|apikey|token|credential|private_key)[[:space:]]*=[[:space:]]*.\"; then echo \"❌ BLOCKED: Potential secret detected in command. Never hardcode secrets. Use environment variables or secret managers.\" && exit 1; fi'"
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qiE \"(password|secret|api_key|apikey|token|credential|private_key)[[:space:]]*=[[:space:]]*.\"; then echo \"BLOCKED: rule=secret_detected detail=Use environment variables or secret managers\" && exit 1; fi'"
           },
           {
             "type": "command",
-            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"git (add|commit)\" && echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"\\.(env|pem|key|credentials|secret)\" ; then echo \"⚠️ WARNING: Potentially sensitive file being committed. Verify no secrets are included.\"; fi'"
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"git (add|commit)\" && echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"\\.(env|pem|key|credentials|secret)\" ; then echo \"WARNING: rule=sensitive_file detail=Verify no secrets included\"; fi'"
           },
           {
             "type": "command",
-            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terraform state (rm|mv|push|replace-provider)\"; then echo \"🚨 STATE MODIFICATION: This modifies Terraform state. Ensure state is backed up before proceeding.\"; fi'"
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terraform state (rm|mv|push|replace-provider)\"; then echo \"CHECKPOINT: type=state_modification action=backup_required severity=high\"; fi'"
           },
           {
             "type": "command",
-            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terraform destroy\"; then echo \"💀 TERRAFORM DESTROY: This will DELETE infrastructure. Double-check the target and ensure this is intentional.\"; fi'"
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terraform destroy\"; then echo \"CHECKPOINT: type=terraform_destroy action=explicit_confirmation severity=critical detail=Will DELETE infrastructure\"; fi'"
           },
           {
             "type": "command",
-            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terraform import\"; then echo \"📥 TERRAFORM IMPORT: Importing existing resource into state. Verify resource ID is correct.\"; fi'"
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terraform import\"; then echo \"CHECKPOINT: type=terraform_import action=verify_resource_id severity=medium\"; fi'"
           }
         ]
       }
@@ -70,15 +74,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'if [[ \"$CLAUDE_FILE_PATH\" == *.md ]]; then echo \"📝 Documentation updated.\"; fi'"
-          },
-          {
-            "type": "command",
-            "command": "bash -c 'if [[ \"$CLAUDE_FILE_PATH\" == *.tf ]] || [[ \"$CLAUDE_FILE_PATH\" == *.hcl ]]; then echo \"🔧 Terraform/HCL file modified. Run terraform fmt and terraform validate before committing.\"; fi'"
-          },
-          {
-            "type": "command",
-            "command": "bash -c 'if [[ \"$CLAUDE_FILE_PATH\" == *.tf ]] && grep -qiE \"(password|secret|api_key|token|credential)[[:space:]]*=[[:space:]]*[^$]\" \"$CLAUDE_FILE_PATH\" 2>/dev/null; then echo \"⚠️ WARNING: Potential hardcoded secret in Terraform file. Use variables or secret manager references.\"; fi'"
+            "command": "bash -c 'EXT=\"${CLAUDE_FILE_PATH##*.}\"; echo \"POST_WRITE: file=$CLAUDE_FILE_PATH ext=$EXT\"; if [[ \"$EXT\" == \"tf\" ]] || [[ \"$EXT\" == \"hcl\" ]]; then echo \"ACTION_REQUIRED: run=terraform_fmt,terraform_validate\"; fi; if [[ \"$EXT\" == \"tf\" ]] && grep -qiE \"(password|secret|api_key|token|credential)[[:space:]]*=[[:space:]]*[^$]\" \"$CLAUDE_FILE_PATH\" 2>/dev/null; then echo \"WARNING: rule=hardcoded_secret detail=Use variables or secret manager\"; fi'"
           }
         ]
       },
@@ -87,7 +83,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'echo \"🔄 Code changes detected.\"'"
+            "command": "bash -c 'echo \"POST_EDIT: status=changes_applied\"'"
           }
         ]
       }
@@ -98,7 +94,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'echo \"✅ QA Agent completed testing.\"'"
+            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=qa-engineer type=testing\"'"
           }
         ]
       },
@@ -107,7 +103,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'echo \"📋 PM Agent completed. Please review the output.\"'"
+            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=product-manager type=planning\"'"
           }
         ]
       },
@@ -116,7 +112,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'echo \"🔍 Infrastructure Validator completed. Review deployment validation report.\"'"
+            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=infrastructure-validator type=validation\"'"
           }
         ]
       },
@@ -125,7 +121,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'echo \"⚙️ DevOps Engineer completed. Infrastructure changes ready for validation.\"'"
+            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=devops-engineer type=infrastructure\"'"
           }
         ]
       },
@@ -134,7 +130,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'echo \"🏗️ Solution Architect completed. Architecture review done.\"'"
+            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=solution-architect type=architecture\"'"
           }
         ]
       },
@@ -143,7 +139,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'echo \"🪒 Simplifier completed. Review complexity challenges and simpler alternatives.\"'"
+            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=simplifier type=review\"'"
           }
         ]
       },
@@ -152,7 +148,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'echo \"📋 Best Practices Validator completed. Review validation report for issues.\"'"
+            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=best-practices-validator type=validation\"'"
           }
         ]
       },
@@ -161,7 +157,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'echo \"📜 Activity Tracker completed. Project history updated.\"'"
+            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=activity-tracker type=memory\"'"
           }
         ]
       },
@@ -170,7 +166,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'echo \"🔍 Drift Detector completed. Review drift report for inconsistencies.\"'"
+            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=drift-detector type=infrastructure\"'"
           }
         ]
       },
@@ -179,7 +175,43 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'echo \"🏗️ Terraform Engineer completed. Review module code, tests, and outputs.\"'"
+            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=terraform-engineer type=infrastructure\"'"
+          }
+        ]
+      },
+      {
+        "matcher": "security-expert",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=security-expert type=security\"'"
+          }
+        ]
+      },
+      {
+        "matcher": "terraform-migration-engineer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=terraform-migration-engineer type=migration\"'"
+          }
+        ]
+      },
+      {
+        "matcher": "senior-backend-engineer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=senior-backend-engineer type=development\"'"
+          }
+        ]
+      },
+      {
+        "matcher": "senior-frontend-engineer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=senior-frontend-engineer type=development\"'"
           }
         ]
       }
@@ -190,7 +222,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash -c 'echo \"🚀 Agent started. MANDATORY: (1) Read project/PROJECT_HISTORY.md on startup. (2) Write your actions to project/PROJECT_HISTORY.md + project/project_history.json BEFORE returning your response. You are responsible for self-tracking — no separate tracker agent will do it for you.\"'"
+            "command": "bash -c 'echo \"AGENT_START: MANDATORY_PROTOCOL=(1)Read project/PROJECT_HISTORY.md (2)Query relevant history for your task (3)Track your actions to PROJECT_HISTORY.md+project_history.json BEFORE returning. You are responsible for self-tracking.\"'"
           }
         ]
       }
