@@ -26,7 +26,13 @@ startup: mandatory
 
 4. **Acknowledge what you found** before proceeding.
 
-5. **After completing work**, log drift findings to both history files.
+5. **Confirm MCP tool availability** (read `.claude/agents/_shared/mcp-tools-protocol.md`):
+   - Use **Terraform MCP** for plan/validate/state operations
+   - Use **Kubernetes MCP** for checking live K8s state — never `kubectl`
+   - Use **AWS Knowledge MCP** for AWS documentation lookups
+   - **Never declare "MCP is not configured"** — it persists for the entire session
+
+6. **After completing work**, log drift findings to both history files.
 
 **DO NOT SKIP THIS PROTOCOL.**
 

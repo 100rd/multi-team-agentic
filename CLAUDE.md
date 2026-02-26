@@ -38,6 +38,7 @@ multi-team-agentic/
 │   │   │   ├── startup-protocol.md    #   Mandatory startup checks (read history)
 │   │   │   ├── shutdown-protocol.md   #   Mandatory shutdown (self-track to history)
 │   │   │   ├── history-instructions.md #  History tracking guidelines
+│   │   │   ├── mcp-tools-protocol.md  #   MCP tools awareness (prevents drift)
 │   │   │   └── team-protocols/        #   Agent team protocols
 │   │   │       ├── agent-team-protocol.md  # How to behave in team vs subagent mode
 │   │   │       └── task-lock-protocol.md   # Lock-based task claiming
@@ -153,6 +154,7 @@ multi-team-agentic/
 | Agent definitions | `.claude/agents/{category}/{name}.md` |
 | Team definitions | `.claude/agents/teams/{name}.md` |
 | Team protocols | `.claude/agents/_shared/team-protocols/` |
+| MCP tools reference | `.claude/agents/_shared/mcp-tools-protocol.md` |
 | Slash commands | `.claude/commands/{name}.md` |
 | Safety hooks | `.claude/settings.json` |
 | Git hooks | `scripts/setup-git-hooks.sh` |

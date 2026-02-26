@@ -72,9 +72,26 @@ Before proceeding with your task, you MUST acknowledge what you learned from his
 Proceeding with task...
 ```
 
-## Step 5: Proceed with Task
+## Step 5: Confirm MCP Tool Availability (REQUIRED)
 
-Only after completing steps 1-4 should you begin your actual work.
+**CRITICAL**: MCP tools are configured for this session and persist for its entire duration. During long-running sessions, context compression may cause you to "forget" MCP tools exist. This step prevents that.
+
+Read the MCP tools reference:
+```
+Read .claude/agents/_shared/mcp-tools-protocol.md
+```
+
+Key rules:
+- **Never declare "MCP is not configured"** — it IS configured for this session
+- **Never fall back to CLI** (`kubectl`, `curl`, `argocd`) when an MCP tool exists
+- **If unsure, try the MCP call** — don't assume it's unavailable
+- Available MCP servers: **ArgoCD**, **Kubernetes**, **Terraform**, **AWS Knowledge**, **GitHub**
+
+If you will be interacting with Kubernetes, ArgoCD, Terraform, or AWS docs during your task, confirm MCP access by noting which MCP servers you will use.
+
+## Step 6: Proceed with Task
+
+Only after completing steps 1-5 should you begin your actual work.
 
 ---
 

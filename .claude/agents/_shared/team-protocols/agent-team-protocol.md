@@ -12,15 +12,31 @@ This protocol governs how agents behave when operating as part of a native Claud
 | Lifecycle | Dies when task complete | Persists until shutdown request |
 | Plan approval | Not available | Leader reviews/approves plans |
 
+## MCP Tools Persistence (CRITICAL for Long Sessions)
+
+Agent teams run for extended periods. During this time, **context window compression** will remove earlier system messages. This can cause you to "forget" that MCP tools are available.
+
+**Rules:**
+1. MCP tools configured at session start **persist for the entire session**
+2. **Never declare "MCP is not configured"** — if you used it before, it still works
+3. **Never fall back to CLI** (`kubectl`, `argocd`, `curl`) when an MCP tool exists
+4. If unsure, **try the MCP call first** before assuming it's unavailable
+5. When in doubt, re-read `.claude/agents/_shared/mcp-tools-protocol.md`
+
+**Available MCP servers**: ArgoCD, Kubernetes, Terraform, AWS Knowledge, GitHub
+
+**Self-check every few tasks**: "Am I about to use a CLI tool when an MCP equivalent exists?"
+
 ## When You Are a Teammate
 
 ### On Spawn
 
 1. Read CLAUDE.md and your agent definition
 2. Execute the standard startup protocol (read project history)
-3. Read your spawn prompt carefully — it contains task-specific context
-4. Check the shared task list for your assignments
-5. If in plan mode, create your plan and wait for approval
+3. **Read `.claude/agents/_shared/mcp-tools-protocol.md`** — know your MCP tools
+4. Read your spawn prompt carefully — it contains task-specific context
+5. Check the shared task list for your assignments
+6. If in plan mode, create your plan and wait for approval
 
 ### During Work
 

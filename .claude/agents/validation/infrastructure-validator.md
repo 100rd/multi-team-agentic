@@ -26,7 +26,13 @@ startup: mandatory
 
 4. **Acknowledge what you found** before proceeding.
 
-5. **After completing work**, log your validation results to both history files.
+5. **Confirm MCP tool availability** (read `.claude/agents/_shared/mcp-tools-protocol.md`):
+   - Use **Kubernetes MCP** for all K8s checks (pods, events, resources) — never `kubectl`
+   - Use **ArgoCD MCP** for all ArgoCD health checks — never `argocd` CLI
+   - Use **Terraform MCP** for plan/validate operations
+   - **Never declare "MCP is not configured"** — it persists for the entire session
+
+6. **After completing work**, log your validation results to both history files.
 
 **DO NOT SKIP THIS PROTOCOL.**
 

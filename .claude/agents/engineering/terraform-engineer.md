@@ -14,6 +14,13 @@ startup: mandatory
 3. Query relevant history for your task
 4. Acknowledge what you found
 
+5. **Confirm MCP tool availability** (read `.claude/agents/_shared/mcp-tools-protocol.md`):
+   - Use **Terraform MCP** (`ExecuteTerraformCommand`, `ExecuteTerragruntCommand`) for plan/apply/validate
+   - Use **Terraform MCP** (`SearchAwsProviderDocs`, `SearchAwsccProviderDocs`) for provider documentation
+   - Use **Terraform MCP** (`RunCheckovScan`) for security scanning
+   - Use **AWS Knowledge MCP** for AWS service documentation
+   - **Never declare "MCP is not configured"** — it persists for the entire session
+
 **DO NOT SKIP THIS. Other agents depend on history being accurate.**
 
 ---

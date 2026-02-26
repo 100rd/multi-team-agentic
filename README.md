@@ -47,8 +47,8 @@ Multi-Agent Squad transforms AI coding assistants into a complete software devel
 
 ```bash
 # 1. Clone this repository
-git clone https://github.com/bijutharakan/multi-agent-squad.git
-cd multi-agent-squad
+git clone https://github.com/100rd/multi-team-agentic.git
+cd multi-team-agentic
 
 # 2. Start Claude Code
 claude
@@ -154,27 +154,45 @@ your-project/
 
 ## 🎭 Your AI Development Team
 
-Based on your project, Claude will suggest relevant agents:
+### Agent Teams (Self-Managed)
 
-### For Full-Stack Projects
-- **🎯 Prime Orchestrator** - Manages the entire workflow
-- **📊 Product Manager** - Requirements and user stories
-- **🏗️ Solution Architect** - System design
-- **💻 Backend Engineer** - API development
-- **🎨 Frontend Engineer** - User interface
-- **✅ QA Engineer** - Testing
-- **🔧 DevOps Engineer** - Deployment
+Agent teams are persistent Claude Code sessions that communicate directly with each other, coordinate through a shared task list, and self-manage their work.
 
-### For API Projects
-- **🏗️ API Architect** - API design
-- **💻 Backend Engineer** - Implementation
-- **📖 API Documentation Specialist** - Docs
-- **✅ API Test Engineer** - Testing
+#### Infrastructure Team (`/infra-team`)
+Full lifecycle infrastructure team with roles:
+- **Architect** - System design (plan mode, requires approval)
+- **Terraform Engineer** - IaC modules, testing, CI/CD
+- **DevOps Engineer** - Kubernetes, CI/CD, Terragrunt operations
+- **Security Reviewer** - Security auditing, CIS compliance
+- **Cost Analyst** - Budget estimation and optimization
+- **Best Practices Validator** - Terraform/K8s/AWS standards
+- **Infrastructure Validator** - Deployment verification
 
-### For Documentation Projects
-- **📝 Technical Writer** - Documentation
-- **🏗️ Information Architect** - Structure
-- **👁️ Documentation Reviewer** - Quality
+#### Ad-Hoc Investigation Team (`/investigate`)
+Spawns 3-5 agents to test competing hypotheses in parallel. Use for debugging, root cause analysis, and performance investigation.
+
+#### Full Lifecycle Design (`/design-system`)
+End-to-end workflow: design, implement, test, deploy, commit. Combines the infrastructure team with automated quality gates.
+
+### Individual Agents
+
+| Category | Agent | Role |
+|----------|-------|------|
+| **Orchestration** | Prime Orchestrator | Manages the entire workflow |
+| **Product** | Product Manager | Requirements and user stories |
+| **Architecture** | Solution Architect | System design, Terragrunt architecture |
+| **Engineering** | Backend Engineer | API development, distributed systems |
+| **Engineering** | Frontend Engineer | UI/UX, performance, accessibility |
+| **Engineering** | Terraform Engineer | Terraform/OpenTofu modules, testing, CI/CD |
+| **Operations** | DevOps Engineer | CI/CD, infrastructure, Terragrunt operations |
+| **Operations** | Terraform Migration Engineer | CloudFormation to Terraform migration |
+| **Infrastructure** | Drift Detector | Infrastructure drift detection |
+| **Security** | Security Expert | Security auditing, compliance, IAM |
+| **Quality** | QA Engineer | Testing, infrastructure validation |
+| **Review** | Simplifier | Occam's Razor advocate, fights over-engineering |
+| **Review** | Best Practices Validator | Terraform/K8s/AWS/CIS standards |
+| **Validation** | Infrastructure Validator | Post-deployment verification |
+| **Memory** | Activity Tracker | Project history keeper |
 
 ## 🛠️ Key Features
 
@@ -293,6 +311,29 @@ Claude will check what you have and work with it!
 
 ### Core Orchestration
 - **`/project`** - Main entry point to start orchestration
+- **`/project-init`** - Project initialization
+- **`/project-status`** - View status of features, worktrees, agents, and issues
+- **`/start-feature`** - Create GitHub issue, worktrees, and assign agents
+- **`/create-agent`** - Create a new specialized agent
+
+### Agent Teams
+- **`/infra-team`** - Launch self-managed infrastructure agent team
+- **`/design-system`** - End-to-end: design, implement, test, deploy, commit
+- **`/investigate`** - Competing hypothesis investigation with parallel agents
+
+### Infrastructure
+- **`/cost-estimate`** - Estimate costs before applying Terraform changes
+- **`/blast-radius`** - Analyze impact of Terraform changes before apply
+- **`/promote-environment`** - Promote changes: dev, staging, prod with gates
+- **`/validate-deployment`** - Verify URL, DNS, SSL, K8s, ArgoCD health
+- **`/terraform-migration`** - CloudFormation to Terraform migration
+
+### History & Worktrees
+- **`/log-activity`** - Log agent activity to project history
+- **`/query-history`** - Search project history for past actions and decisions
+- **`/manage-worktrees`** - List, create, clean up git worktrees
+
+### Utility Scripts
 - **`worktree-manager.sh`** - Git worktree management for multi-repo
 - **`discover-project.py`** - Analyze existing codebases
 
