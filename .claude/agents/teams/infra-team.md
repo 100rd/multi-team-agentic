@@ -4,16 +4,24 @@ An agent team specialized for infrastructure design, implementation, and validat
 
 ## Team Composition
 
-| Role | Agent Type | Responsibility | Starts In |
-|------|-----------|----------------|-----------|
-| **Lead** | prime-orchestrator | Coordination only (delegate mode). Breaks work, assigns tasks, approves plans, synthesizes results. Never writes code. | delegate mode |
-| **Architect** | solution-architect | System design, cloud architecture, component diagrams, trade-off analysis. Produces design docs. | plan mode |
-| **Terraform Engineer** | terraform-engineer | Writes Terraform/Terragrunt modules, tests, CI/CD. Implements the architect's design. | plan mode |
-| **DevOps Engineer** | devops-engineer | Kubernetes manifests, Helm charts, ArgoCD config, CI/CD pipelines, deployment automation. | plan mode |
-| **Security Reviewer** | security-expert | Reviews all plans/code for CIS compliance, IAM least-privilege, network segmentation, secret management. | normal |
-| **Cost Analyst** | devops-engineer | Runs /cost-estimate, /blast-radius. Challenges over-provisioning. Reports cost implications. | normal |
-| **Validator** | infrastructure-validator | Post-apply validation: terraform plan/apply verification, deployment health, DNS/SSL checks. | normal |
-| **Best Practices** | best-practices-validator | Reviews all code against Terraform/K8s/AWS standards. Blocks merge on violations. | normal |
+| Role | Agent Type | Responsibility | Starts In | Isolation |
+|------|-----------|----------------|-----------|-----------|
+| **Lead** | prime-orchestrator | Coordination only (delegate mode). Breaks work, assigns tasks, approves plans, synthesizes results. Never writes code. | delegate mode | none |
+| **Architect** | solution-architect | System design, cloud architecture, component diagrams, trade-off analysis. Produces design docs. | plan mode | `worktree` |
+| **Terraform Engineer** | terraform-engineer | Writes Terraform/Terragrunt modules, tests, CI/CD. Implements the architect's design. | plan mode | `worktree` |
+| **DevOps Engineer** | devops-engineer | Kubernetes manifests, Helm charts, ArgoCD config, CI/CD pipelines, deployment automation. | plan mode | `worktree` |
+| **Security Reviewer** | security-expert | Reviews all plans/code for CIS compliance, IAM least-privilege, network segmentation, secret management. | normal | none |
+| **Cost Analyst** | devops-engineer | Runs /cost-estimate, /blast-radius. Challenges over-provisioning. Reports cost implications. | normal | none |
+| **Validator** | infrastructure-validator | Post-apply validation: terraform plan/apply verification, deployment health, DNS/SSL checks. | normal | none |
+| **Best Practices** | best-practices-validator | Reviews all code against Terraform/K8s/AWS standards. Blocks merge on violations. | normal | none |
+
+### Worktree Isolation Strategy
+
+Teammates that **write files** (Architect, Terraform Engineer, DevOps Engineer) are spawned with `isolation: "worktree"`, giving each their own repository copy. This eliminates file conflicts between parallel implementers.
+
+Teammates that **only read and review** (Security, Cost, Validator, Best Practices) run without isolation — they read from the main working directory and report findings via messages.
+
+The Lead merges each writer's worktree branch into the feature branch after reviews pass. See `agent-team-protocol.md` for the full isolation protocol.
 
 ## Team Communication Patterns
 

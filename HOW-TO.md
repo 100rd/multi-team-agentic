@@ -193,6 +193,7 @@ Agent teams are multiple Claude Code sessions running in parallel, each in its o
 | **Communication** | Messages any teammate | Reports to caller only |
 | **Task coordination** | Shared task list | Caller manages |
 | **Visibility** | tmux split panes | Hidden |
+| **Isolation** | Worktree per writer | Optional via flag |
 | **Cost** | Higher (multiple contexts) | Lower |
 | **Best for** | Complex, multi-role work | Quick, focused tasks |
 
@@ -222,18 +223,51 @@ You can message any teammate without going through the Lead:
 - `Ctrl+T` to see the shared task list
 - Ask the Lead: "What's the current status?"
 
+### Worktree Isolation
+
+Teammates that write files get their own copy of the repository via `isolation: "worktree"`. The orchestrator handles this automatically — you don't need to configure anything.
+
+#### Who Gets Isolated?
+
+| Teammate | Isolated? | Why |
+|----------|-----------|-----|
+| Architect | ✅ Yes | Writes design docs |
+| Terraform Engineer | ✅ Yes | Writes .tf modules |
+| DevOps Engineer | ✅ Yes | Writes K8s/Helm manifests |
+| Security Reviewer | ❌ No | Reads and reviews only |
+| Cost Analyst | ❌ No | Reads and estimates only |
+| Validator | ❌ No | Reads and checks only |
+| Best Practices | ❌ No | Reads and reviews only |
+
+#### What Happens Under the Hood
+
+```
+Lead spawns Terraform Engineer with isolation: "worktree"
+  → Claude Code creates .claude/worktrees/{name}/ with its own branch
+  → Terraform Engineer writes code in the isolated copy
+  → No risk of conflicting with Architect or DevOps
+  → Lead merges the branch when reviews pass
+  → Worktree auto-cleans after merge
+```
+
+#### Benefits
+- **No file conflicts**: Parallel writers can't step on each other
+- **Clean diffs**: Each writer's changes on a separate branch
+- **Safe rollback**: Discard a writer's worktree without affecting others
+- **Auto-cleanup**: Empty worktrees are removed automatically
+
 ### Team Lifecycle
 
 ```
 1. You invoke /infra-team or /design-system
-2. Lead creates team → spawns teammates
+2. Lead creates team → spawns teammates (writers get worktree isolation)
 3. Teammates get their own panes
 4. Shared task list created with dependencies
-5. Teammates claim tasks → work → complete → claim next
-6. Lead approves plans, synthesizes results
+5. Teammates claim tasks → work in isolation → complete → claim next
+6. Lead approves plans, merges worktree branches
 7. You approve human checkpoints (terraform apply)
 8. Team delivers PR
-9. Lead cleans up team resources
+9. Lead cleans up team resources + worktrees
 ```
 
 ### Delegate Mode
@@ -638,6 +672,20 @@ Or ask the Lead to spawn a replacement:
 ```
 "The terraform engineer is stuck. Spawn a replacement."
 ```
+
+### Worktree conflicts during merge
+
+**Cause:** Two writers modified the same file (shouldn't happen with proper role separation).
+**Fix:**
+```bash
+# See what's in the worktree
+ls .claude/worktrees/
+
+# Manually resolve and merge
+git merge --no-ff <worktree-branch>
+```
+
+**Prevention:** Ensure writers have non-overlapping file domains (Architect → docs/, Terraform → terraform/, DevOps → kubernetes/).
 
 ### Stale task locks
 

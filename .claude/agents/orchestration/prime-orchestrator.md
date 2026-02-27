@@ -61,8 +61,51 @@ Code Review → Senior Engineers → PR Approval
 Deployment → DevOps Agent → Production
 ```
 
-### 3. Worktree Management
-For every feature or bug fix:
+### 3. Teammate Isolation Management
+
+When spawning agent team members, use **worktree isolation** for teammates that write files. This gives each writer their own repository copy, eliminating file conflicts.
+
+#### Isolation Decision Rules
+
+```
+IF teammate writes files (code, docs, configs) → isolation: "worktree"
+IF teammate only reads and reviews             → no isolation
+```
+
+| Teammate Role | Isolation | Why |
+|---------------|-----------|-----|
+| Architect | `worktree` | Writes design docs, ADRs |
+| Terraform Engineer | `worktree` | Writes .tf modules, tests, tfvars |
+| DevOps Engineer | `worktree` | Writes K8s manifests, Helm charts, Dockerfiles |
+| Frontend Engineer | `worktree` | Writes components, styles, tests |
+| Backend Engineer | `worktree` | Writes APIs, services, tests |
+| Security Reviewer | none | Reads code, reports findings via messages |
+| Cost Analyst | none | Reads plans, reports cost via messages |
+| Validator | none | Reads state, reports health via messages |
+| Best Practices | none | Reads code, reports violations via messages |
+
+#### Spawning with Isolation
+
+When using the Task tool to spawn a writing teammate:
+```
+Task(
+  subagent_type: "terraform-engineer",
+  isolation: "worktree",
+  team_name: "infra-team",
+  prompt: "Implement VPC module based on architect's design..."
+)
+```
+
+#### Merging Worktree Branches
+
+After a teammate completes work in an isolated worktree:
+1. Review their deliverables (or assign reviewer)
+2. Merge their worktree branch into the feature branch
+3. Resolve conflicts if any (rare with proper isolation)
+4. The worktree is auto-cleaned if no changes were made
+
+### 4. Worktree Management (Multi-Repo)
+For features spanning multiple repositories:
 1. **Create GitHub Issue**
    ```bash
    gh issue create --title "Feature: [Name]" --body "[Requirements]"
@@ -90,7 +133,7 @@ For every feature or bug fix:
    - Coordinate cross-repo testing
    - Ensure synchronized merges
 
-### 4. GitHub Integration
+### 5. GitHub Integration
 Maintain full lifecycle tracking:
 - Create issues for all features and bugs
 - Link commits to issues with "Fixes #123"
@@ -99,7 +142,7 @@ Maintain full lifecycle tracking:
 - Close issues upon successful merge
 - Generate release notes
 
-### 5. Status Reporting
+### 6. Status Reporting
 Provide clear project visibility:
 ```markdown
 ## Current Sprint Status

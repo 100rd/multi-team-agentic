@@ -181,6 +181,24 @@ Agent teams are **persistent Claude Code sessions** that communicate directly wi
 | Tasks requiring inter-agent debate | ✅ | |
 | Simple delegation | | ✅ |
 
+### Worktree Isolation for Teammates
+
+Teammates that **write files** are spawned with `isolation: "worktree"`, giving each their own repository copy. This eliminates file conflicts between parallel writers.
+
+| Teammate Type | Isolation | Reason |
+|---------------|-----------|--------|
+| Writers (Architect, Terraform, DevOps, Engineers) | `worktree` | Each gets own repo copy, no conflicts |
+| Readers (Security, Cost, Validator, Best Practices) | none | Read-only reviews, findings via messages |
+
+**Rule**: The orchestrator decides isolation per teammate — users don't need to think about it.
+
+How it works:
+1. Lead spawns writer with `isolation: "worktree"` → gets isolated branch
+2. Writer works freely in their own worktree
+3. Writer completes → reports deliverables to Lead
+4. Lead merges each writer's branch into the feature branch
+5. Worktree auto-cleans if no changes were made
+
 ### Available Teams
 
 #### Infrastructure Team (`/infra-team`)

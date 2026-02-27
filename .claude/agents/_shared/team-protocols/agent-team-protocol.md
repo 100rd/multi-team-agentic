@@ -64,9 +64,51 @@ Agent teams run for extended periods. During this time, **context window compres
 6. Return to step 1 (self-organizing loop)
 ```
 
-### File Conflict Prevention
+### Worktree Isolation
 
-**CRITICAL**: Never edit files assigned to another teammate.
+Teammates that **write files** should be spawned with `isolation: "worktree"`. This gives each teammate its own copy of the repository, eliminating file conflicts entirely.
+
+#### How It Works
+
+1. The Lead spawns a teammate with `isolation: "worktree"` in the Task tool
+2. The teammate gets a temporary git worktree (separate working directory + branch)
+3. The teammate works freely — no risk of conflicting with other teammates
+4. When the teammate finishes, its changes are on an isolated branch
+5. The Lead merges changes from each teammate's branch into the feature branch
+
+#### Isolation Decision Matrix
+
+| Role | Isolation | Reason |
+|------|-----------|--------|
+| Architect | `worktree` | Writes design docs, ADRs |
+| Terraform Engineer | `worktree` | Writes .tf modules, tests |
+| DevOps Engineer | `worktree` | Writes K8s manifests, Helm charts |
+| Security Reviewer | none | Read-only reviews, findings via messages |
+| Cost Analyst | none | Read-only analysis, reports via messages |
+| Validator | none | Read-only checks, reports via messages |
+| Best Practices | none | Read-only reviews, findings via messages |
+
+**Rule**: Isolate writers, don't isolate readers.
+
+#### When You Are in a Worktree
+
+If you were spawned with worktree isolation:
+- You have your own branch and working directory
+- You can write freely without coordinating file access
+- Your changes will be merged by the Lead after review
+- **Still message teammates** when your output is their input (e.g., design doc ready for implementation)
+
+#### Merging Worktree Changes
+
+The Lead is responsible for merging isolated teammate branches:
+1. Wait for teammate to complete and report deliverables
+2. Review the changes (or assign a reviewer)
+3. Merge the teammate's worktree branch into the feature branch
+4. Resolve any conflicts (rare when isolation is used correctly)
+
+### File Ownership (Non-Isolated Fallback)
+
+When worktree isolation is **not** used, fall back to directory-based ownership to prevent conflicts.
 
 Each teammate owns specific directories:
 - Architect: `docs/architecture/`, `docs/decisions/`
