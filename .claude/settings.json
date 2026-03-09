@@ -39,11 +39,11 @@
           },
           {
             "type": "command",
-            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terraform (apply|destroy)\"; then echo \"CHECKPOINT: type=terraform_apply action=human_approval_required severity=critical\"; fi'"
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terraform (apply|destroy)\"; then bash scripts/terraform-env-check.sh apply; fi'"
           },
           {
             "type": "command",
-            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terragrunt (apply|destroy|run-all.*apply|run-all.*destroy)\"; then echo \"CHECKPOINT: type=terragrunt_apply action=human_approval_required severity=critical\"; fi'"
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terragrunt (apply|destroy|run-all.*apply|run-all.*destroy)\"; then bash scripts/terraform-env-check.sh apply; fi'"
           },
           {
             "type": "command",
