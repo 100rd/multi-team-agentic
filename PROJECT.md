@@ -2,23 +2,27 @@
 
 ## Active Projects
 
-<!-- Add your projects here using the template below -->
+### 1. GenAI Enablement
+**Name**: GenAI Enablement - DevOps/SRE Adoption Program
+**Type**: Implementation Plan & Knowledge Repository
+**Status**: Research & Planning
+**Created**: 2025-12-02
+**Location**: `project/genai-enablement/`
+**Remote**: https://github.com/100rd/genai-enablement
 
-<!--
-### 1. Project Name
-**Name**: Project Name
-**Type**: Web Application / API / Infrastructure / etc.
-**Status**: Planning / Active Development / Maintenance
-**Created**: YYYY-MM-DD
-**Location**: `project/project-name/`
-
-**Description**: Brief description of the project.
+**Description**: Comprehensive GenAI adoption program for DevOps/SRE workflows. Enables project teams to use AI in real SDLC/SRE workflows through proven patterns, reusable playbooks, and measurable impact.
 
 **Tech Stack**:
-- Backend: ...
-- Frontend: ...
-- Database: ...
--->
+- Python (LangGraph for AI agents)
+- AWS (Bedrock, CloudWatch, EventBridge)
+- Terraform / Kubernetes
+- Observability: Datadog / New Relic
+
+**Key Workstreams**:
+- Market research & tool analysis (40+ solutions) - Complete
+- AI Incident Agent (LangGraph) - In Progress
+- Playbooks & templates library - Not Started
+- Team enablement workshops - Not Started
 
 ## Project Structure
 ```
