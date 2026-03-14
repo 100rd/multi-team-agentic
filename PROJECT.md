@@ -2,23 +2,55 @@
 
 ## Active Projects
 
-<!-- Add your projects here using the template below -->
+### 2. multiqlti
+**Name**: multiqlti — Multi-Model AI Pipeline
+**Type**: SaaS / AI Platform (Full-Stack Web App)
+**Status**: MVP Built — Provider Integration In Progress
+**Created**: 2026-03-13
+**Location**: `project/multiqlti/`
+**Remote**: https://github.com/100rd/multiqlti
 
-<!--
-### 1. Project Name
-**Name**: Project Name
-**Type**: Web Application / API / Infrastructure / etc.
-**Status**: Planning / Active Development / Maintenance
-**Created**: YYYY-MM-DD
-**Location**: `project/project-name/`
-
-**Description**: Brief description of the project.
+**Description**: AI tool that combines multiple LLM providers (Claude, Gemini, Grok) in one configurable pipeline to solve complex tasks. Uses a multi-agent, multi-team approach where each pipeline stage (Planning, Architecture, Development, Testing, Code Review, Deployment, Monitoring) can be assigned a different model. Built as a full-stack web app with real-time streaming via WebSocket.
 
 **Tech Stack**:
-- Backend: ...
-- Frontend: ...
-- Database: ...
--->
+- TypeScript (frontend + backend)
+- React 19, Vite, TailwindCSS v4, Radix UI
+- Express 5, Drizzle ORM + PostgreSQL
+- WebSocket (real-time pipeline events)
+- Docker / docker-compose
+
+**Key Workstreams**:
+- Core pipeline engine + 7 SDLC teams - Complete (MVP)
+- Mock / vLLM / Ollama providers - Complete
+- Claude (Anthropic) provider - Not Started
+- Gemini (Google) provider - Not Started
+- Grok (xAI) provider - Not Started
+- UI for provider/API key configuration - Not Started
+- Multi-model routing logic per team/stage - Not Started
+
+---
+
+### 1. GenAI Enablement
+**Name**: GenAI Enablement - DevOps/SRE Adoption Program
+**Type**: Implementation Plan & Knowledge Repository
+**Status**: Research & Planning
+**Created**: 2025-12-02
+**Location**: `project/genai-enablement/`
+**Remote**: https://github.com/100rd/genai-enablement
+
+**Description**: Comprehensive GenAI adoption program for DevOps/SRE workflows. Enables project teams to use AI in real SDLC/SRE workflows through proven patterns, reusable playbooks, and measurable impact.
+
+**Tech Stack**:
+- Python (LangGraph for AI agents)
+- AWS (Bedrock, CloudWatch, EventBridge)
+- Terraform / Kubernetes
+- Observability: Datadog / New Relic
+
+**Key Workstreams**:
+- Market research & tool analysis (40+ solutions) - Complete
+- AI Incident Agent (LangGraph) - In Progress
+- Playbooks & templates library - Not Started
+- Team enablement workshops - Not Started
 
 ## Project Structure
 ```

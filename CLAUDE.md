@@ -41,9 +41,13 @@ multi-team-agentic/
 │   │   │   ├── mcp-tools-protocol.md  #   MCP tools awareness (prevents drift)
 │   │   │   └── team-protocols/        #   Agent team protocols
 │   │   │       ├── agent-team-protocol.md  # How to behave in team vs subagent mode
-│   │   │       └── task-lock-protocol.md   # Lock-based task claiming
+│   │   │       ├── task-lock-protocol.md   # Lock-based task claiming
+│   │   │       └── auto-approve-protocol.md # Env-aware auto-approve governance
 │   │   ├── teams/                     #   Team Definitions
-│   │   │   └── infra-team.md          #   Infrastructure team composition & flow
+│   │   │   ├── infra-team.md          #   Infrastructure team composition & flow
+│   │   │   ├── dev-team.md            #   Programmer-centric fullstack dev team
+│   │   │   ├── ai-research-team.md    #   AI research team composition & flow
+│   │   │   └── pipeline-team.md       #   Full lifecycle pipeline team (research→deploy)
 │   │   ├── orchestration/
 │   │   │   └── prime-orchestrator.md  #   Main orchestrator agent
 │   │   ├── architecture/
@@ -51,6 +55,7 @@ multi-team-agentic/
 │   │   ├── engineering/
 │   │   │   ├── senior-backend-engineer.md
 │   │   │   ├── senior-frontend-engineer.md
+│   │   │   ├── fullstack-engineer.md    #   Security-first fullstack (React/Node/Python/Go)
 │   │   │   └── terraform-engineer.md    #   Terraform/OpenTofu modules, testing, CI/CD
 │   │   ├── operations/
 │   │   │   ├── devops-engineer.md     #   DevOps + Terragrunt operations
@@ -85,7 +90,10 @@ multi-team-agentic/
 │   │   ├── promote-environment.md     #   /promote-environment
 │   │   ├── log-activity.md            #   /log-activity
 │   │   ├── query-history.md           #   /query-history
+│   │   ├── dev-team.md                #   /dev-team — programmer-centric dev team
 │   │   ├── infra-team.md              #   /infra-team — self-managed infra team
+│   │   ├── ai-research.md             #   /ai-research — AI deep research team
+│   │   ├── pipeline.md                #   /pipeline — full lifecycle pipeline
 │   │   ├── investigate.md             #   /investigate — competing hypotheses
 │   │   └── design-system.md           #   /design-system — full lifecycle
 │   │
@@ -130,7 +138,8 @@ multi-team-agentic/
 │   ├── agile-tools-setup.py
 │   ├── sprint-management.sh
 │   ├── pr-review-cycle.sh
-│   └── worktree-manager.sh
+│   ├── worktree-manager.sh
+│   └── terraform-env-check.sh         # Env-aware auto-approve for terraform hooks
 │
 ├── templates/                         # ═══ AGENT TEMPLATES (for /create-agent) ═══
 │   └── ...
@@ -162,6 +171,8 @@ multi-team-agentic/
 | Agent templates | `templates/` |
 | Task locks | `project/.locks/` |
 | Project history | `project/PROJECT_HISTORY.md` + `project/project_history.json` |
+| Auto-approve protocol | `.claude/agents/_shared/team-protocols/auto-approve-protocol.md` |
+| Env check script | `scripts/terraform-env-check.sh` |
 | HOW-TO manual | `HOW-TO.md` |
 
 ## 🏗️ Agent Teams (NEW — Native Claude Code Feature)
@@ -175,6 +186,8 @@ Agent teams are **persistent Claude Code sessions** that communicate directly wi
 | Use Case | Use Agent Team | Use Subagent |
 |----------|---------------|-------------|
 | Infrastructure design + implement | ✅ | |
+| Deep AI/ML research with citations | ✅ | |
+| Full lifecycle: research → deploy → validate | ✅ | |
 | Quick file search | | ✅ |
 | Multi-role review (security + cost + practices) | ✅ | |
 | Single focused task | | ✅ |
@@ -207,6 +220,27 @@ Full team definition: `.claude/agents/teams/infra-team.md`
 Roles: Architect, Terraform Engineer, DevOps Engineer, Security Reviewer, Cost Analyst, Validator, Best Practices
 
 Use for: System design, infrastructure implementation, cloud architecture, Terraform/K8s work
+
+#### AI Research Team (`/ai-research`)
+Full team definition: `.claude/agents/teams/ai-research-team.md`
+
+Roles: AI Architect, MLOps Researcher, Infrastructure Analyst, Open Source Scout, Fact Checker, Peer Reviewer
+
+Use for: Deep research on AI infrastructure, model training/fine-tuning/inference, MLOps tooling, cloud GPU comparisons, OSS ecosystem analysis
+
+#### Pipeline Team (`/pipeline`)
+Full team definition: `.claude/agents/teams/pipeline-team.md`
+
+Roles: Phased spawning of 12 roles across 6 phases — researchers, architect, implementers, reviewers, validators, gap analyzer
+
+Use for: Full autonomous lifecycle — research a topic, design architecture, implement infrastructure, deploy to dev/staging (auto-approved), validate, find gaps, deliver report + PR
+
+#### Development Team (`/dev-team`)
+Full team definition: `.claude/agents/teams/dev-team.md`
+
+Roles: Architect, Fullstack Engineer (BE-focus), Fullstack Engineer (FE-focus), Security Engineer (veto power), QA Engineer, DevOps Engineer
+
+Use for: Fullstack application development with strict security, clean code, and comprehensive testing. Security Engineer has veto power over any merge. Every line of code is reviewed for OWASP Top 10, every function tested, every API hardened.
 
 #### Ad-Hoc Investigation Team (`/investigate`)
 Spawns 3-5 agents to investigate competing hypotheses in parallel.
@@ -304,32 +338,47 @@ Task 6: Security review of code    → blocked by Tasks 4 + 5
 
 Spawns a self-managed agent team that handles the full lifecycle.
 
-### 2. Competing Hypothesis Investigation (NEW)
+### 2. AI Deep Research
+**Triggers**: `/ai-research`, "research AI infrastructure", "compare inference frameworks", "analyze MLOps tooling"
+
+Spawns a self-managed research team with parallel research threads, fact-checking, and peer review. Produces comprehensive reports with citations.
+
+### 3. Full Lifecycle Pipeline (Autonomous)
+**Triggers**: `/pipeline`, "research and build", "full lifecycle", "research then implement"
+
+Spawns a single team with phased role spawning that covers: research → design → implement → deploy → validate → report. Auto-approves terraform apply for dev/staging. Produces research + infrastructure + gap analysis in one PR.
+
+### 4. Fullstack Application Development (NEW)
+**Triggers**: `/dev-team`, "build an app", "create an API", "fullstack development"
+
+Spawns a programmer-centric team with Architect, 2 Fullstack Engineers (BE + FE focus), Security Engineer (veto power), QA Engineer, and DevOps. Strict enforcement of security, clean code, and testing standards. Security Engineer can block any merge.
+
+### 5. Competing Hypothesis Investigation (NEW)
 **Triggers**: `/investigate`, "debug this", "why is X happening"
 
 Spawns parallel agents testing different theories adversarially.
 
-### 3. Project Initialization
+### 6. Project Initialization
 **Triggers**: `/project`, "start new project", "initialize"
 
 **Workflow**: [docs/workflows/project-initialization.md](docs/workflows/project-initialization.md)
 
-### 4. PRD Creation
+### 7. PRD Creation
 **Triggers**: "create PRD", "define requirements", "plan feature"
 
 **Workflow**: [docs/workflows/prd-creation.md](docs/workflows/prd-creation.md)
 
-### 5. Feature Development
+### 8. Feature Development
 **Triggers**: "start development", "implement feature", "begin coding"
 
 **Workflow**: [docs/workflows/feature-development.md](docs/workflows/feature-development.md)
 
-### 6. Sprint Management
+### 9. Sprint Management
 **Triggers**: "start sprint", "sprint planning", "sprint review"
 
 **Workflow**: [docs/workflows/sprint-management.md](docs/workflows/sprint-management.md)
 
-### 7. Deployment
+### 10. Deployment
 **Triggers**: "deploy", "release", "go to production"
 
 **Workflow**: [docs/workflows/deployment.md](docs/workflows/deployment.md)
@@ -459,6 +508,9 @@ Do you approve? (y/n):
 
 ### Team Commands (NEW)
 - `/infra-team` - Launch self-managed infrastructure agent team
+- `/dev-team` - Launch programmer-centric team: fullstack engineers, architect, security (veto), QA, DevOps
+- `/ai-research` - Launch AI research team for deep analysis of training, inference, MLOps
+- `/pipeline` - Full autonomous lifecycle: research → design → implement → deploy → validate → report
 - `/design-system` - Full lifecycle: design → implement → test → deploy → commit
 - `/investigate` - Competing hypothesis debugging with parallel agents
 
