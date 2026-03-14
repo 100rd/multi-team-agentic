@@ -54,6 +54,7 @@ multi-team-agentic/
 │   │   ├── engineering/
 │   │   │   ├── senior-backend-engineer.md
 │   │   │   ├── senior-frontend-engineer.md
+│   │   │   ├── fullstack-engineer.md    #   Security-first fullstack (React/Node/Python/Go)
 │   │   │   └── terraform-engineer.md    #   Terraform/OpenTofu modules, testing, CI/CD
 │   │   ├── operations/
 │   │   │   ├── devops-engineer.md     #   DevOps + Terragrunt operations
@@ -88,6 +89,7 @@ multi-team-agentic/
 │   │   ├── promote-environment.md     #   /promote-environment
 │   │   ├── log-activity.md            #   /log-activity
 │   │   ├── query-history.md           #   /query-history
+│   │   ├── dev-team.md                #   /dev-team — programmer-centric dev team
 │   │   ├── infra-team.md              #   /infra-team — self-managed infra team
 │   │   ├── ai-research.md             #   /ai-research — AI deep research team
 │   │   ├── pipeline.md                #   /pipeline — full lifecycle pipeline
