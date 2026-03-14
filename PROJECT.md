@@ -2,34 +2,6 @@
 
 ## Active Projects
 
-### 2. multiqlti
-**Name**: multiqlti — Multi-Model AI Pipeline
-**Type**: SaaS / AI Platform (Full-Stack Web App)
-**Status**: MVP Built — Provider Integration In Progress
-**Created**: 2026-03-13
-**Location**: `project/multiqlti/`
-**Remote**: https://github.com/100rd/multiqlti
-
-**Description**: AI tool that combines multiple LLM providers (Claude, Gemini, Grok) in one configurable pipeline to solve complex tasks. Uses a multi-agent, multi-team approach where each pipeline stage (Planning, Architecture, Development, Testing, Code Review, Deployment, Monitoring) can be assigned a different model. Built as a full-stack web app with real-time streaming via WebSocket.
-
-**Tech Stack**:
-- TypeScript (frontend + backend)
-- React 19, Vite, TailwindCSS v4, Radix UI
-- Express 5, Drizzle ORM + PostgreSQL
-- WebSocket (real-time pipeline events)
-- Docker / docker-compose
-
-**Key Workstreams**:
-- Core pipeline engine + 7 SDLC teams - Complete (MVP)
-- Mock / vLLM / Ollama providers - Complete
-- Claude (Anthropic) provider - Not Started
-- Gemini (Google) provider - Not Started
-- Grok (xAI) provider - Not Started
-- UI for provider/API key configuration - Not Started
-- Multi-model routing logic per team/stage - Not Started
-
----
-
 ### 1. GenAI Enablement
 **Name**: GenAI Enablement - DevOps/SRE Adoption Program
 **Type**: Implementation Plan & Knowledge Repository

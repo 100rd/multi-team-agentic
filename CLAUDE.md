@@ -45,7 +45,6 @@ multi-team-agentic/
 │   │   │       └── auto-approve-protocol.md # Env-aware auto-approve governance
 │   │   ├── teams/                     #   Team Definitions
 │   │   │   ├── infra-team.md          #   Infrastructure team composition & flow
-│   │   │   ├── dev-team.md            #   Programmer-centric fullstack dev team
 │   │   │   ├── ai-research-team.md    #   AI research team composition & flow
 │   │   │   └── pipeline-team.md       #   Full lifecycle pipeline team (research→deploy)
 │   │   ├── orchestration/
@@ -235,13 +234,6 @@ Roles: Phased spawning of 12 roles across 6 phases — researchers, architect, i
 
 Use for: Full autonomous lifecycle — research a topic, design architecture, implement infrastructure, deploy to dev/staging (auto-approved), validate, find gaps, deliver report + PR
 
-#### Development Team (`/dev-team`)
-Full team definition: `.claude/agents/teams/dev-team.md`
-
-Roles: Architect, Fullstack Engineer (BE-focus), Fullstack Engineer (FE-focus), Security Engineer (veto power), QA Engineer, DevOps Engineer
-
-Use for: Fullstack application development with strict security, clean code, and comprehensive testing. Security Engineer has veto power over any merge. Every line of code is reviewed for OWASP Top 10, every function tested, every API hardened.
-
 #### Ad-Hoc Investigation Team (`/investigate`)
 Spawns 3-5 agents to investigate competing hypotheses in parallel.
 
@@ -348,37 +340,32 @@ Spawns a self-managed research team with parallel research threads, fact-checkin
 
 Spawns a single team with phased role spawning that covers: research → design → implement → deploy → validate → report. Auto-approves terraform apply for dev/staging. Produces research + infrastructure + gap analysis in one PR.
 
-### 4. Fullstack Application Development (NEW)
-**Triggers**: `/dev-team`, "build an app", "create an API", "fullstack development"
-
-Spawns a programmer-centric team with Architect, 2 Fullstack Engineers (BE + FE focus), Security Engineer (veto power), QA Engineer, and DevOps. Strict enforcement of security, clean code, and testing standards. Security Engineer can block any merge.
-
-### 5. Competing Hypothesis Investigation (NEW)
+### 4. Competing Hypothesis Investigation (NEW)
 **Triggers**: `/investigate`, "debug this", "why is X happening"
 
 Spawns parallel agents testing different theories adversarially.
 
-### 6. Project Initialization
+### 5. Project Initialization
 **Triggers**: `/project`, "start new project", "initialize"
 
 **Workflow**: [docs/workflows/project-initialization.md](docs/workflows/project-initialization.md)
 
-### 7. PRD Creation
+### 6. PRD Creation
 **Triggers**: "create PRD", "define requirements", "plan feature"
 
 **Workflow**: [docs/workflows/prd-creation.md](docs/workflows/prd-creation.md)
 
-### 8. Feature Development
+### 7. Feature Development
 **Triggers**: "start development", "implement feature", "begin coding"
 
 **Workflow**: [docs/workflows/feature-development.md](docs/workflows/feature-development.md)
 
-### 9. Sprint Management
+### 8. Sprint Management
 **Triggers**: "start sprint", "sprint planning", "sprint review"
 
 **Workflow**: [docs/workflows/sprint-management.md](docs/workflows/sprint-management.md)
 
-### 10. Deployment
+### 9. Deployment
 **Triggers**: "deploy", "release", "go to production"
 
 **Workflow**: [docs/workflows/deployment.md](docs/workflows/deployment.md)
@@ -508,7 +495,6 @@ Do you approve? (y/n):
 
 ### Team Commands (NEW)
 - `/infra-team` - Launch self-managed infrastructure agent team
-- `/dev-team` - Launch programmer-centric team: fullstack engineers, architect, security (veto), QA, DevOps
 - `/ai-research` - Launch AI research team for deep analysis of training, inference, MLOps
 - `/pipeline` - Full autonomous lifecycle: research → design → implement → deploy → validate → report
 - `/design-system` - Full lifecycle: design → implement → test → deploy → commit
