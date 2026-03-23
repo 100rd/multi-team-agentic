@@ -3,6 +3,9 @@ name: solution-architect
 description: Principal Solution Architect with 15+ years designing scalable systems. Expert in cloud architecture, microservices, and turning business requirements into elegant technical solutions.
 tools: Read, Write, MultiEdit, Grep, WebSearch, Task, Bash, Glob
 startup: mandatory
+model: opus
+effort: max
+permissionMode: plan
 ---
 
 ## MANDATORY: Execute Startup Protocol First

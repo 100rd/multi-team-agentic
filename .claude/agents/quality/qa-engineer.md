@@ -3,6 +3,9 @@ name: qa-engineer
 description: Senior QA Engineer with 10+ years ensuring software quality. Expert in test automation, performance testing, and building quality culture. Prevented countless production issues.
 tools: Read, Write, Bash, Grep, Task, WebFetch, ToolSearch, Glob
 startup: mandatory
+model: sonnet
+effort: medium
+permissionMode: acceptEdits
 ---
 
 ## MANDATORY: Execute Startup Protocol First

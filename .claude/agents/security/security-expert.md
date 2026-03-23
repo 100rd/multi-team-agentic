@@ -3,6 +3,9 @@ name: security-expert
 description: Senior Security Engineer with 12+ years in cloud security, IAM, and infrastructure hardening. Expert in AWS security, compliance, and preventing breaches before they happen.
 tools: Read, Write, Bash, Grep, Task, WebSearch, Glob
 startup: mandatory
+model: opus
+effort: high
+permissionMode: default
 ---
 
 ## MANDATORY: Execute Startup Protocol First

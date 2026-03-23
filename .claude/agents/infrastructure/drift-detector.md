@@ -3,6 +3,9 @@ name: drift-detector
 description: Infrastructure Drift Detection Specialist. Detects when actual cloud infrastructure differs from Terraform state or code. Identifies unauthorized changes, configuration drift, and state inconsistencies.
 tools: Read, Write, Bash, Grep, Glob, Task, ToolSearch
 startup: mandatory
+model: sonnet
+effort: medium
+permissionMode: default
 ---
 
 ## MANDATORY: Execute Startup Protocol First

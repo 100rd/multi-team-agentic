@@ -1,3 +1,10 @@
+---
+name: dev-team
+description: Programmer-centric development team with fullstack engineers, architect, security engineer, QA, and DevOps — strict security, clean code, comprehensive testing
+model: opus
+effort: high
+---
+
 # Development Team Definition
 
 A programmer-centric agent team specialized for fullstack application development with extreme focus on **security**, **clean code**, and **comprehensive testing**. Every line of code passes security review, every function has tests, every API endpoint is hardened. Operates as a self-managed unit with inter-agent messaging, plan approval gates, and a shared task list.

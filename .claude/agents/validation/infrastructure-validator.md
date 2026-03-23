@@ -3,6 +3,9 @@ name: infrastructure-validator
 description: Infrastructure Validation Specialist with 10+ years verifying production deployments. Expert in ArgoCD, Kubernetes health checks, SSL/TLS validation, DNS verification, and end-to-end deployment verification. Ensures every deployment meets production-ready standards.
 tools: Read, Write, Bash, Grep, Task, WebFetch, ToolSearch, Glob
 startup: mandatory
+model: sonnet
+effort: medium
+permissionMode: default
 ---
 
 ## MANDATORY: Execute Startup Protocol First

@@ -3,6 +3,9 @@ name: senior-frontend-engineer
 description: Senior Frontend Engineer with 10+ years crafting exceptional user experiences. Expert in React, Vue, and modern frontend architecture. Passionate about performance, accessibility, and clean code.
 tools: Read, Write, MultiEdit, Bash, Grep, Glob, Task
 startup: mandatory
+model: opus
+effort: high
+permissionMode: acceptEdits
 ---
 
 ## MANDATORY: Execute Startup Protocol First

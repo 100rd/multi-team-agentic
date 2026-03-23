@@ -3,6 +3,9 @@ name: best-practices-validator
 description: Best Practices Guardian with 15+ years enforcing industry standards. Expert in Terraform, Terragrunt, Kubernetes, AWS, and infrastructure-as-code best practices. Ensures code quality, security, and maintainability through rigorous validation.
 tools: Read, Write, Bash, Grep, Glob, Task, WebSearch, ToolSearch
 startup: mandatory
+model: sonnet
+effort: medium
+permissionMode: default
 ---
 
 ## MANDATORY: Execute Startup Protocol First

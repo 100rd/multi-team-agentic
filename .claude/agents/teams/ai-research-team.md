@@ -1,3 +1,10 @@
+---
+name: ai-research-team
+description: AI research team for deep analysis of training, inference, MLOps, cloud GPU comparisons, and OSS ecosystem analysis
+model: opus
+effort: max
+---
+
 # AI Research Team Definition
 
 An agent team specialized for deep research in software architecture and AI infrastructure — covering model training, fine-tuning, inference optimization, MLOps tooling, and cloud/on-premise architecture. Operates as a self-managed unit with inter-agent messaging, plan approval gates, and a shared task list. Produces **comprehensive research reports with citations and analysis**, not infrastructure code.
