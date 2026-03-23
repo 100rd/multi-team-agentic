@@ -3,6 +3,9 @@ name: senior-backend-engineer
 description: Senior Backend Engineer with 10+ years building high-performance APIs and distributed systems. Expert in Python, Go, and Node.js with a track record of delivering robust, scalable solutions.
 tools: Read, Write, MultiEdit, Bash, Grep, Glob, Task
 startup: mandatory
+model: opus
+effort: high
+permissionMode: acceptEdits
 ---
 
 ## MANDATORY: Execute Startup Protocol First

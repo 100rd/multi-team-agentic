@@ -3,7 +3,45 @@
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
   "teammateMode": "tmux",
+  "permissions": {
+    "deny": [
+      "Bash(terraform destroy *)",
+      "Bash(terraform state rm *)",
+      "Bash(terraform state mv *)",
+      "Bash(terragrunt destroy *)",
+      "Bash(terragrunt run-all destroy *)",
+      "Bash(rm -rf *)",
+      "Bash(drop database *)",
+      "Bash(DROP TABLE *)",
+      "Bash(DROP DATABASE *)",
+      "Bash(truncate table *)",
+      "Bash(TRUNCATE TABLE *)",
+      "Bash(kubectl delete namespace *)",
+      "Bash(kubectl delete -f *)",
+      "Bash(aws s3 rb *)",
+      "Bash(aws s3 rm * --recursive)",
+      "Bash(aws rds delete-db-instance *)",
+      "Bash(aws rds delete-db-cluster *)",
+      "Bash(aws ec2 terminate-instances *)",
+      "Bash(aws dynamodb delete-table *)",
+      "Bash(aws ecs delete-service *)",
+      "Bash(aws eks delete-cluster *)",
+      "Bash(git push --force *)",
+      "Bash(git reset --hard *)"
+    ]
+  },
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"SESSION_START: Read project/PROJECT_HISTORY.md for context before starting work\"'"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Write",
@@ -88,134 +126,6 @@
         ]
       }
     ],
-    "SubagentStop": [
-      {
-        "matcher": "qa-engineer",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=qa-engineer type=testing\"'"
-          }
-        ]
-      },
-      {
-        "matcher": "product-manager",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=product-manager type=planning\"'"
-          }
-        ]
-      },
-      {
-        "matcher": "infrastructure-validator",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=infrastructure-validator type=validation\"'"
-          }
-        ]
-      },
-      {
-        "matcher": "devops-engineer",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=devops-engineer type=infrastructure\"'"
-          }
-        ]
-      },
-      {
-        "matcher": "solution-architect",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=solution-architect type=architecture\"'"
-          }
-        ]
-      },
-      {
-        "matcher": "simplifier",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=simplifier type=review\"'"
-          }
-        ]
-      },
-      {
-        "matcher": "best-practices-validator",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=best-practices-validator type=validation\"'"
-          }
-        ]
-      },
-      {
-        "matcher": "activity-tracker",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=activity-tracker type=memory\"'"
-          }
-        ]
-      },
-      {
-        "matcher": "drift-detector",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=drift-detector type=infrastructure\"'"
-          }
-        ]
-      },
-      {
-        "matcher": "terraform-engineer",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=terraform-engineer type=infrastructure\"'"
-          }
-        ]
-      },
-      {
-        "matcher": "security-expert",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=security-expert type=security\"'"
-          }
-        ]
-      },
-      {
-        "matcher": "terraform-migration-engineer",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=terraform-migration-engineer type=migration\"'"
-          }
-        ]
-      },
-      {
-        "matcher": "senior-backend-engineer",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=senior-backend-engineer type=development\"'"
-          }
-        ]
-      },
-      {
-        "matcher": "senior-frontend-engineer",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash -c 'echo \"AGENT_COMPLETE: agent=senior-frontend-engineer type=development\"'"
-          }
-        ]
-      }
-    ],
     "SubagentStart": [
       {
         "matcher": ".*",
@@ -223,6 +133,61 @@
           {
             "type": "command",
             "command": "bash -c 'echo \"AGENT_START: MANDATORY_PROTOCOL=(1)Read project/PROJECT_HISTORY.md (2)Query relevant history for your task (3)Track your actions to PROJECT_HISTORY.md+project_history.json BEFORE returning. You are responsible for self-tracking.\"'"
+          }
+        ]
+      }
+    ],
+    "SubagentStop": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'if [ -f project/PROJECT_HISTORY.md ]; then LAST_ENTRY=$(grep -c \"^## \" project/PROJECT_HISTORY.md 2>/dev/null || echo 0); RECENT=$(tail -5 project/PROJECT_HISTORY.md | grep -c \"$(date +%Y-%m-%d)\" 2>/dev/null || echo 0); if [ \"$RECENT\" -eq 0 ] && [ \"$LAST_ENTRY\" -gt 0 ]; then echo \"WARNING: Agent may not have logged to PROJECT_HISTORY.md today. Verify shutdown protocol was followed.\"; fi; fi'"
+          }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"TEAMMATE_IDLE: Check TaskList for unassigned work or unblocked tasks\"'"
+          }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"TASK_COMPLETED: Update PROJECT_HISTORY.md and check for newly unblocked dependent tasks\"'"
+          }
+        ]
+      }
+    ],
+    "WorktreeCreate": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"WORKTREE_CREATED: Isolated workspace ready. Remember to merge changes back to feature branch when done.\"'"
+          }
+        ]
+      }
+    ],
+    "WorktreeRemove": [
+      {
+        "matcher": ".*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'echo \"WORKTREE_REMOVED: Verify all changes were merged before cleanup.\"'"
           }
         ]
       }

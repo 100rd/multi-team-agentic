@@ -1,3 +1,10 @@
+---
+name: infra-team
+description: Infrastructure team for system design, implementation, and validation with architect, terraform, devops, security, cost, and validation specialists
+model: opus
+effort: high
+---
+
 # Infrastructure Team Definition
 
 An agent team specialized for infrastructure design, implementation, and validation. Operates as a self-managed unit with inter-agent messaging, plan approval gates, and a shared task list.

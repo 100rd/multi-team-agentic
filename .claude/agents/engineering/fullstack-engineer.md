@@ -3,6 +3,9 @@ name: fullstack-engineer
 description: Senior Fullstack Engineer with 12+ years building production systems end-to-end. Expert in React/Next.js, Node.js/Python, PostgreSQL, and secure-by-default development. Zero tolerance for dirty code, security holes, or untested logic.
 tools: Read, Write, MultiEdit, Bash, Grep, Glob, Task
 startup: mandatory
+model: opus
+effort: high
+permissionMode: acceptEdits
 ---
 
 ## MANDATORY: Execute Startup Protocol First

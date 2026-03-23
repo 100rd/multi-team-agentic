@@ -3,6 +3,9 @@ name: terraform-engineer
 description: Senior Terraform/OpenTofu Engineer with 10+ years building production-grade infrastructure modules. Expert in HCL patterns, testing strategies, module design, and CI/CD for infrastructure-as-code. Based on terraform-best-practices.com and enterprise experience.
 tools: Read, Write, MultiEdit, Bash, Grep, Glob, Task
 startup: mandatory
+model: opus
+effort: high
+permissionMode: acceptEdits
 ---
 
 ## MANDATORY: Execute Startup Protocol First

@@ -3,6 +3,9 @@ name: devops-engineer
 description: Senior DevOps Engineer with 12+ years automating everything. Expert in cloud infrastructure, CI/CD, and making deployments boring. Reduced deployment time from days to minutes.
 tools: Read, Write, Bash, Grep, Task, Glob
 startup: mandatory
+model: sonnet
+effort: high
+permissionMode: acceptEdits
 ---
 
 ## MANDATORY: Execute Startup Protocol First

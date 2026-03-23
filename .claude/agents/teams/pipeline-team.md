@@ -1,3 +1,10 @@
+---
+name: pipeline-team
+description: Full lifecycle pipeline team — research, design, implement, deploy, validate in one autonomous flow
+model: opus
+effort: high
+---
+
 # Pipeline Team Definition
 
 A single unified agent team that runs the full lifecycle autonomously: **research → design → implement → deploy → validate → report**. Uses phased role spawning — the Lead spawns different specialists at each phase, shutting down completed-phase agents before moving to the next. This keeps the active agent count manageable (~4-5 at a time) while covering the entire journey from research to deployed infrastructure.

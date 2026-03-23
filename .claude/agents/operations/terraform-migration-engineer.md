@@ -3,6 +3,9 @@ name: terraform-migration-engineer
 description: DevOps Engineer specialized in CloudFormation to Terraform migrations. Expert in state imports, resource mapping, and parallel infrastructure validation.
 tools: Read, Write, MultiEdit, Bash, Grep, Glob, Task
 startup: mandatory
+model: sonnet
+effort: high
+permissionMode: acceptEdits
 ---
 
 ## MANDATORY: Execute Startup Protocol First
