@@ -11,16 +11,16 @@ An agent team specialized for infrastructure design, implementation, and validat
 
 ## Team Composition
 
-| Role | Agent Type | Responsibility | Starts In | Isolation |
-|------|-----------|----------------|-----------|-----------|
-| **Lead** | prime-orchestrator | Coordination only (delegate mode). Breaks work, assigns tasks, approves plans, synthesizes results. Never writes code. | delegate mode | none |
-| **Architect** | solution-architect | System design, cloud architecture, component diagrams, trade-off analysis. Produces design docs. | plan mode | `worktree` |
-| **Terraform Engineer** | terraform-engineer | Writes Terraform/Terragrunt modules, tests, CI/CD. Implements the architect's design. | plan mode | `worktree` |
-| **DevOps Engineer** | devops-engineer | Kubernetes manifests, Helm charts, ArgoCD config, CI/CD pipelines, deployment automation. | plan mode | `worktree` |
-| **Security Reviewer** | security-expert | Reviews all plans/code for CIS compliance, IAM least-privilege, network segmentation, secret management. | normal | none |
-| **Cost Analyst** | devops-engineer | Runs /cost-estimate, /blast-radius. Challenges over-provisioning. Reports cost implications. | normal | none |
-| **Validator** | infrastructure-validator | Post-apply validation: terraform plan/apply verification, deployment health, DNS/SSL checks. | normal | none |
-| **Best Practices** | best-practices-validator | Reviews all code against Terraform/K8s/AWS standards. Blocks merge on violations. | normal | none |
+| Role | Agent Type | Model | Responsibility | Starts In | Isolation |
+|------|-----------|-------|----------------|-----------|-----------|
+| **Lead** | prime-orchestrator | **opus** | Coordination only (delegate mode). Breaks work, assigns tasks, approves plans, synthesizes results. Never writes code. | delegate mode | none |
+| **Architect** | solution-architect | sonnet | System design, cloud architecture, component diagrams, trade-off analysis. Produces design docs. | plan mode | `worktree` |
+| **Terraform Engineer** | terraform-engineer | sonnet | Writes Terraform/Terragrunt modules, tests. Runs verification loop (fmt/validate/tflint/checkov/plan). Never applies. | plan mode | `worktree` |
+| **DevOps Engineer** | devops-engineer | sonnet | Kubernetes manifests, Helm charts, ArgoCD config, CI/CD pipelines, deployment automation. | plan mode | `worktree` |
+| **Security Reviewer** | security-expert | sonnet | Reviews all plans/code for CIS compliance, IAM least-privilege, network segmentation, secret management. | normal | none |
+| **Cost Analyst** | devops-engineer | sonnet | Runs /cost-estimate, /blast-radius. Challenges over-provisioning. Reports cost implications. | normal | none |
+| **Validator** | infrastructure-validator | sonnet | Post-merge validation: verify CI/CD apply-from-main succeeded, deployment health, DNS/SSL checks. | normal | none |
+| **Best Practices** | best-practices-validator | sonnet | Reviews all code against Terraform/K8s/AWS standards. Blocks merge on violations. | normal | none |
 
 ### Worktree Isolation Strategy
 
@@ -100,26 +100,47 @@ Task 4: Write Terraform modules (Terraform Engineer)
   │
   ├──► Task 5: Write K8s/Helm manifests (DevOps)
   │
-  ▼ (blocked until 4 complete)
-Task 6: Security review of code (Security)
-  │
-  ├──► Task 7: Best practices review (Best Practices)
+  ▼ (blocked until 4+5 complete)
+Task 6: Security review of code (Security)         ─┐
+  │                                                    ├── Parallel reviews
+Task 7: Best practices review (Best Practices)     ─┘
   │
   ▼ (blocked until 6+7 complete)
-Task 8: Apply to dev environment (Terraform Engineer)
+Task 8: Terraform verification loop (Terraform Engineer)
+  │   fmt → validate → tflint → checkov → plan → fix → repeat until ALL clean
+  │   Captures plan output for PR description
   │
-  ▼ (blocked until 8 complete)
-Task 9: Validate deployment (Validator)
+  ▼ (blocked until 8 produces clean output)
+Task 9: Create Draft PR (Lead)
+  │   Commit to feature branch, push, gh pr create --draft
+  │   PR description includes: plan output, review status, cost estimate
   │
   ▼ (blocked until 9 complete)
-Task 10: Promote to staging (Lead - requires human approval)
+Task 10: CI pipeline verification (Lead monitors, Terraform Engineer fixes)
+  │   Wait for CI checks: fmt, validate, tflint, trivy, checkov, plan
+  │   If CI fails → Terraform Engineer fixes → pushes → CI re-runs
+  │   Loop until ALL CI checks are green
   │
-  ▼ (after approval)
-Task 11: Final validation (Validator)
+  ▼ (blocked until 10 — all CI checks green)
+Task 11: Mark PR ready for review (Lead)
+  │   gh pr ready — converts Draft to ready for review
+  │   Adds reviewers if configured
   │
-  ▼
-Task 12: Commit and create PR (Lead)
+  ▼ (blocked until PR approved and merged to main)
+Task 12: Post-merge verification (Validator)
+  │   Verify CI/CD on main runs terraform plan + apply successfully
+  │   Validate deployment health after apply-from-main completes
+  │
+  ▼ (blocked until 12 complete)
+Task 13: Team cleanup and shutdown (Lead)
 ```
+
+### Key Principle: Agents NEVER Apply
+
+- Agents write code and verify with `terraform plan`
+- `terraform apply` runs ONLY from CI/CD on the main branch after PR merge
+- This eliminates drift between code in main and actual infrastructure state
+- See `auto-approve-protocol.md` for full rules
 
 ## Plan Approval Criteria
 
@@ -165,10 +186,12 @@ The Lead approves plans ONLY when ALL of the following are met:
 5. **Implementers work** (plan mode, requires approval before coding)
 6. **Security + Best Practices review code** (parallel)
 7. **Fixes applied** based on review findings
-8. **Apply to dev** (terraform plan → human approval → apply)
-9. **Validator checks** deployment
-10. **Promote** through environments with gates
-11. **Commit + PR** when all validations pass
+8. **Terraform verification loop** — fmt/validate/tflint/checkov/plan until clean
+9. **Draft PR created** with plan output and review status
+10. **CI pipeline verification** — wait for green, fix if needed
+11. **PR marked ready** for human review
+12. **Post-merge validation** — verify apply-from-main succeeds
+13. **Team cleanup**
 
 ### Quality Gates (Must ALL Pass)
 
@@ -179,15 +202,17 @@ The Lead approves plans ONLY when ALL of the following are met:
 | G3 | Terraform fmt + validate | Terraform Engineer |
 | G4 | Checkov/tfsec scan | Security Reviewer |
 | G5 | Best practices check | Best Practices Validator |
-| G6 | terraform plan clean | Terraform Engineer |
-| G7 | Post-apply validation | Infrastructure Validator |
-| G8 | Deployment health | Infrastructure Validator |
+| G6 | Verification loop clean (all tools pass, plan clean) | Terraform Engineer |
+| G7 | CI pipeline green on Draft PR | Automated (GitHub Actions) |
+| G8 | Post-merge apply-from-main healthy | Infrastructure Validator |
 
 ### Handling Failures
 
 - If Security review fails → Implementer fixes, re-submits
 - If Cost exceeds threshold → Architect redesigns, team restarts from Task 1
-- If terraform apply fails → DevOps investigates, Terraform Engineer fixes
+- If verification loop fails → Terraform Engineer fixes code, re-runs loop from Step 1
+- If CI pipeline fails → Terraform Engineer fixes, pushes, CI re-runs
+- If post-merge apply fails → Escalate to human (do NOT attempt manual apply)
 - If validation fails → Team debugs with competing hypothesis pattern
 - If 3+ failures on same task → Escalate to human
 
@@ -238,6 +263,6 @@ User says: "Design an HFT trading system on AWS"
 6. **Terraform Engineer** implements: VPC, EC2 placement, EKS, RDS, ElastiCache
 7. **DevOps** implements: K8s configs, monitoring, Grafana dashboards
 8. **Security + Best Practices** review all code
-9. **Apply** to dev → **Validate** → **Promote** staging → **Validate** → PR
+9. **Verification loop** (fmt/validate/tflint/checkov/plan) → **Draft PR** → **CI green** → **Ready for review** → **Merge** → **Apply from main** (CI/CD)
 
 Total: One PR with fully tested, reviewed, compliant infrastructure.

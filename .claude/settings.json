@@ -77,11 +77,15 @@
           },
           {
             "type": "command",
-            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terraform (apply|destroy)\"; then bash scripts/terraform-env-check.sh apply; fi'"
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terraform (apply|destroy)\"; then echo \"BLOCKED: rule=no_agent_apply detail=Agents cannot terraform apply/destroy. Apply only from CI/CD on main branch after PR merge. Use terraform plan instead.\" && exit 1; fi'"
           },
           {
             "type": "command",
-            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terragrunt (apply|destroy|run-all.*apply|run-all.*destroy)\"; then bash scripts/terraform-env-check.sh apply; fi'"
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terragrunt (apply|destroy|run-all.*apply|run-all.*destroy)\"; then echo \"BLOCKED: rule=no_agent_apply detail=Agents cannot terragrunt apply/destroy. Apply only from CI/CD on main branch after PR merge. Use terragrunt plan instead.\" && exit 1; fi'"
+          },
+          {
+            "type": "command",
+            "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terraform plan\"; then bash scripts/terraform-env-check.sh plan; fi'"
           },
           {
             "type": "command",

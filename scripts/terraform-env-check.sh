@@ -3,12 +3,14 @@
 # Called by .claude/settings.json hooks to determine environment and approve/block terraform operations.
 #
 # Usage: terraform-env-check.sh <action>
-#   action: "apply" or "destroy"
+#   action: "plan", "apply", or "destroy"
 #   Reads CLAUDE_TOOL_INPUT from environment (set by Claude Code hooks)
 #
 # Exit codes:
-#   0 = allowed (auto-approved for dev/staging, or checkpoint for unknown)
-#   1 = blocked (production requires human approval)
+#   0 = allowed (auto-approved for plan in dev/staging)
+#   1 = blocked (apply/destroy always blocked for agents; plan blocked for prod)
+#
+# POLICY: Agents can ONLY run terraform plan. Apply/destroy is CI/CD only (from main).
 #
 # Environment detection priority:
 #   1. Working directory path patterns (environments/dev/, env/staging/, etc.)
@@ -85,25 +87,28 @@ detect_env() {
 
 ENV=$(detect_env "$INPUT")
 
+# HARD BLOCK: apply/destroy is NEVER allowed from agents (CI/CD only from main)
+if [ "$ACTION" = "apply" ] || [ "$ACTION" = "destroy" ]; then
+  echo "BLOCKED: type=terraform_${ACTION} env=${ENV} action=CI_CD_ONLY severity=critical detail=Agents cannot terraform ${ACTION}. Apply/destroy only from CI/CD pipelines on main branch after PR merge. Use terraform plan instead."
+  exit 1
+fi
+
+# PLAN: allowed for dev/staging, blocked for prod
 case "$ENV" in
   dev)
-    echo "AUTO_APPROVED: type=terraform_${ACTION} env=dev detail=Development environment auto-approved"
+    echo "AUTO_APPROVED: type=terraform_plan env=dev detail=Development plan auto-approved for verification"
     exit 0
     ;;
   staging)
-    if [ "$ACTION" = "destroy" ]; then
-      echo "CHECKPOINT: type=terraform_destroy env=staging action=confirmation_recommended severity=high detail=Staging destroy auto-approved but document the reason"
-    else
-      echo "AUTO_APPROVED: type=terraform_${ACTION} env=staging detail=Staging environment auto-approved"
-    fi
+    echo "AUTO_APPROVED: type=terraform_plan env=staging detail=Staging plan auto-approved for verification"
     exit 0
     ;;
   prod|production)
-    echo "BLOCKED: type=terraform_${ACTION} env=prod action=HUMAN_APPROVAL_REQUIRED severity=critical detail=Production changes require explicit human approval"
+    echo "BLOCKED: type=terraform_plan env=prod action=HUMAN_APPROVAL_REQUIRED severity=critical detail=Production plan requires explicit human approval"
     exit 1
     ;;
   *)
-    echo "CHECKPOINT: type=terraform_${ACTION} env=unknown action=human_approval_required severity=high detail=Could not determine environment from command. Defaulting to manual approval."
+    echo "CHECKPOINT: type=terraform_plan env=unknown action=human_approval_recommended severity=high detail=Could not determine environment. Defaulting to checkpoint."
     exit 0
     ;;
 esac

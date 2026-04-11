@@ -70,7 +70,7 @@ Teammates that **write files** should be spawned with `isolation: "worktree"`. T
 
 #### How It Works
 
-1. The Lead spawns a teammate with `isolation: "worktree"` in the Task tool
+1. The Lead spawns a teammate with `isolation: "worktree"` in the Agent tool
 2. The teammate gets a temporary git worktree (separate working directory + branch)
 3. The teammate works freely — no risk of conflicting with other teammates
 4. When the teammate finishes, its changes are on an isolated branch

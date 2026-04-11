@@ -15,9 +15,9 @@ Spawns a single unified agent team that runs the full lifecycle autonomously: **
 3. **Spawns architect** (Phase 2) — designs based on research findings
 4. **Spawns implementers** (Phase 3) — write Terraform + K8s based on design
 5. **Spawns reviewers** (Phase 4) — security + best practices review
-6. **Auto-deploys** (Phase 5) — terraform apply to dev/staging (auto-approved)
-7. **Validates + finds gaps** (Phase 5) — health checks + gap analysis
-8. **Delivers** (Phase 6) — final report, commit, PR
+6. **Verifies + PRs** (Phase 5) — verification loop, Draft PR, CI green
+7. **Validates post-merge** (Phase 6) — health checks after CI/CD apply from main
+8. **Delivers** (Phase 6) — final report, gap analysis
 
 ## Team Roles (By Phase)
 
@@ -79,17 +79,17 @@ If findings → Phase 3 agents fix and re-submit
 When all pass → Merge worktree branches → Shutdown Phase 3+4
 ```
 
-### Phase 5: Deploy + Validate
+### Phase 5: Verify + Draft PR
 ```
-terraform plan + apply to dev (AUTO-APPROVED by env-check hook)
-Spawn Validator → checks health (DNS, SSL, K8s, ArgoCD)
-terraform plan + apply to staging (AUTO-APPROVED by env-check hook)
-Validator re-checks staging health
+Terraform Engineer runs verification loop (fmt/validate/tflint/checkov/plan)
 Spawn Gap Analyzer → finds problems, edge cases, improvements
+Lead creates Draft PR with plan output and gap analysis
+CI pipeline runs → fix if needed → loop until green
+Mark PR ready for review
 Shutdown Phase 5 agents
 ```
 
-### Phase 6: Report + Deliver
+### Phase 6: Post-Merge + Report
 ```
 Lead compiles final-report.md from all phases
 Create feature branch
@@ -124,27 +124,17 @@ Team cleanup
 /pipeline "Federated learning infrastructure" --project fedml --skip-deploy
 ```
 
-## Auto-Approve Behavior
+## Agent Execution Boundaries
 
-By default, terraform apply is auto-approved for dev and staging environments:
+Agents in the pipeline can ONLY run `terraform plan` for verification. Apply/destroy is **BLOCKED** for all environments:
 
-| Environment | terraform apply | terraform destroy |
-|-------------|----------------|-------------------|
-| dev | AUTO | AUTO |
-| staging | AUTO | CHECKPOINT |
-| prod | BLOCKED (human) | BLOCKED (human) |
-| unknown | CHECKPOINT | CHECKPOINT |
+| Environment | terraform plan | terraform apply | terraform destroy |
+|-------------|---------------|----------------|-------------------|
+| dev | AUTO | BLOCKED (CI/CD only) | BLOCKED (CI/CD only) |
+| staging | AUTO | BLOCKED (CI/CD only) | BLOCKED (CI/CD only) |
+| prod | BLOCKED (human) | BLOCKED (CI/CD only) | BLOCKED (CI/CD only) |
 
-Override with `--auto-approve`:
-- `--auto-approve none` — all environments require human approval
-- `--auto-approve dev` — only dev auto-approved
-- `--auto-approve dev,staging` — both auto-approved (default)
-
-The environment detection script (`scripts/terraform-env-check.sh`) determines the environment from:
-1. Working directory path patterns (`environments/dev/`)
-2. Tfvars file names (`dev.tfvars`)
-3. `-var-file` arguments
-4. Terragrunt directory patterns
+Apply happens automatically from CI/CD on the main branch after the PR is merged.
 
 See `.claude/agents/_shared/team-protocols/auto-approve-protocol.md` for full governance.
 
@@ -192,12 +182,12 @@ IMPORTANT: Read the design at project/{PROJECT_NAME}/docs/architecture/ before i
 
 Your responsibilities: {ROLE_RESPONSIBILITIES}
 
-Auto-approve environments: {AUTO_APPROVE_ENVS}
-For these environments, terraform apply proceeds without human approval.
+CRITICAL: You may NOT run terraform apply. Use terraform plan for verification only.
+Apply happens from CI/CD on main after PR merge.
 
 Quality requirements:
+- All code must pass the verification loop (fmt/validate/tflint/checkov/plan)
 - All code must pass security review
-- All Terraform must pass fmt, validate, and checkov
 - Rollback plan required for every change
 ```
 

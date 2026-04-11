@@ -25,9 +25,9 @@ Execute a parallel CFN→Terraform migration campaign.
 2. **Spawn Parallel Agents**
    For each partition group, launch terraform-migration-engineer:
    ```
-   Task(subagent_type="terraform-migration-engineer",
-        run_in_background=true,
-        prompt="Convert {template} to Terraform in {target_dir}/{module}")
+   Agent(subagent_type="terraform-migration-engineer",
+         run_in_background=true,
+         prompt="Convert {template} to Terraform in {target_dir}/{module}")
    ```
 
 3. **Validation Gate**

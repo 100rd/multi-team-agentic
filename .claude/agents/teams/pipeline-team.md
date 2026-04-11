@@ -13,9 +13,9 @@ A single unified agent team that runs the full lifecycle autonomously: **researc
 
 | | `/infra-team` | `/ai-research` | `/pipeline` |
 |---|---|---|---|
-| **Scope** | Design → deploy | Research only | Research → design → deploy → validate |
-| **Output** | Terraform + K8s code | Research reports | Both: research + code + deployment + gap analysis |
-| **Autonomy** | Needs human at apply | Fully autonomous | Auto-approve dev/staging, human only for prod |
+| **Scope** | Design → PR | Research only | Research → design → verify → PR → validate |
+| **Output** | Terraform + K8s code | Research reports | Both: research + code + PR + gap analysis |
+| **Autonomy** | Agents plan only, apply from CI/CD | Fully autonomous | Agents plan only, apply from CI/CD on main |
 | **Phases** | Single phase | Single phase | 6 sequential phases |
 | **Agent Lifecycle** | All spawn at once | All spawn at once | Phased: spawn, work, shutdown, next phase |
 
@@ -50,18 +50,19 @@ A single unified agent team that runs the full lifecycle autonomously: **researc
 | **Security Reviewer** | security-expert | none | Review design + code for CIS compliance, IAM, encryption, network security |
 | **Best Practices** | best-practices-validator | none | Review code against Terraform/K8s/AWS standards |
 
-### Phase 5: Deploy + Validate (2 agents)
+### Phase 5: Verify + Draft PR (2 agents)
 
-| Role | Agent Type | Isolation | Responsibility |
-|------|-----------|-----------|----------------|
-| **Validator** | infrastructure-validator | none | Post-apply health checks — DNS, SSL, K8s status, ArgoCD sync |
-| **Gap Analyzer** | qa-engineer | none | Find gaps, problems, edge cases, missing configs, improvement opportunities |
+| Role | Agent Type | Model | Isolation | Responsibility |
+|------|-----------|-------|-----------|----------------|
+| **Terraform Engineer** | terraform-engineer | sonnet | `worktree` | Run verification loop (fmt/validate/tflint/checkov/plan), capture plan output |
+| **Gap Analyzer** | qa-engineer | sonnet | none | Find gaps, problems, edge cases, missing configs, improvement opportunities |
 
-### Phase 6: Report (Lead only)
+### Phase 6: Post-Merge Validation (2 agents)
 
-| Role | Agent Type | Isolation | Responsibility |
-|------|-----------|-----------|----------------|
-| **Lead** | prime-orchestrator | none | Compile final report, commit to feature branch, create PR |
+| Role | Agent Type | Model | Isolation | Responsibility |
+|------|-----------|-------|-----------|----------------|
+| **Validator** | infrastructure-validator | sonnet | none | Post-merge health checks — verify CI/CD apply succeeded, DNS, SSL, K8s status |
+| **Lead** | prime-orchestrator | **opus** | none | Compile final report, update project history, team cleanup |
 
 ### Always Active
 
@@ -103,16 +104,17 @@ A single unified agent team that runs the full lifecycle autonomously: **researc
                      │ When all pass: merge worktree branches
                      │ Shutdown Phase 3 + 4 agents
                      │
-    Phase 5          │ Terraform apply dev (AUTO-APPROVED)
-    DEPLOY           │ Terraform apply staging (AUTO-APPROVED)
-                     │ Spawn Validator + Gap Analyzer
-                     │ Wait for validation and gap analysis
+    Phase 5          │ Spawn Terraform Engineer (verification loop)
+    VERIFY + PR      │ fmt → validate → tflint → checkov → plan until clean
+                     │ Spawn Gap Analyzer (parallel)
+                     │ Create Draft PR with plan output
+                     │ Wait for CI pipeline green (fix if needed)
+                     │ Mark PR ready for review
                      │ Shutdown Phase 5 agents
                      │
-    Phase 6          │ Compile final report from all phases
-    REPORT           │ Create feature branch
-                     │ Commit all changes
-                     │ Create PR
+    Phase 6          │ Wait for PR merge to main
+    POST-MERGE       │ Spawn Validator (post-merge health checks)
+                     │ Compile final report from all phases
                      │ Update project history
                      │ Team cleanup
                      │
@@ -204,22 +206,21 @@ Phase 4 — Review (parallel)
     │
     ▼ (blocked until 9+10 pass, all fixes applied)
 
-Phase 5 — Deploy + Validate
-  Task 12: terraform plan + apply to dev (AUTO-APPROVED)
-  Task 13: Validate dev deployment (Validator)
+Phase 5 — Verify + Draft PR
+  Task 12: Verification loop — fmt/validate/tflint/checkov/plan (Terraform Engineer)
+  Task 13: Gap analysis (Gap Analyzer)
     │
-    ▼ (blocked until 13 passes)
-  Task 14: terraform plan + apply to staging (AUTO-APPROVED)
-  Task 15: Validate staging deployment (Validator)
-  Task 16: Gap analysis (Gap Analyzer)
+    ▼ (blocked until 12+13 complete)
+  Task 14: Create Draft PR with plan output + gap analysis (Lead)
+  Task 15: CI pipeline verification — wait for green, fix if needed (Lead + Terraform Engineer)
+  Task 16: Mark PR ready for review (Lead)
     │
-    ▼ (blocked until 15+16 complete)
+    ▼ (blocked until PR merged to main)
 
-Phase 6 — Report + Deliver
-  Task 17: Compile final report (Lead)
-  Task 18: Create feature branch + commit (Lead)
-  Task 19: Create Pull Request (Lead)
-  Task 20: Update project history + cleanup (Lead)
+Phase 6 — Post-Merge + Report
+  Task 17: Post-merge validation — verify CI/CD apply succeeded (Validator)
+  Task 18: Compile final report (Lead)
+  Task 19: Update project history + cleanup (Lead)
 ```
 
 ## Plan Approval Criteria
@@ -287,22 +288,17 @@ When running autonomously, the Lead can auto-approve plans if ALL criteria above
 
 ## Auto-Approve Integration
 
-### How Auto-Approve Works in the Pipeline
+### Agent Execution Boundaries
 
-1. The `/pipeline` command accepts `--auto-approve dev,staging` (default)
-2. The Lead includes auto-approve scope in terraform-related teammate prompts
-3. `scripts/terraform-env-check.sh` is called by settings.json hooks automatically
-4. For dev/staging: hook returns exit 0 with AUTO_APPROVED message → agent proceeds
-5. For prod: hook returns exit 1 with BLOCKED message → agent stops, waits for human
+Agents in the pipeline can ONLY run `terraform plan` for verification. Apply/destroy is **BLOCKED** for all environments:
 
-### Environments
+| Environment | terraform plan | terraform apply | terraform destroy |
+|-------------|---------------|----------------|-------------------|
+| dev | AUTO | BLOCKED (CI/CD only) | BLOCKED (CI/CD only) |
+| staging | AUTO | BLOCKED (CI/CD only) | BLOCKED (CI/CD only) |
+| prod | BLOCKED (human) | BLOCKED (CI/CD only) | BLOCKED (CI/CD only) |
 
-| Environment | terraform apply | terraform destroy |
-|-------------|----------------|-------------------|
-| dev | AUTO | AUTO |
-| staging | AUTO | CHECKPOINT |
-| prod | BLOCKED | BLOCKED |
-| unknown | CHECKPOINT | CHECKPOINT |
+Apply happens from CI/CD on the main branch after PR merge.
 
 See `auto-approve-protocol.md` for full governance rules.
 
@@ -328,9 +324,9 @@ See `auto-approve-protocol.md` for full governance rules.
 
 ### Phase 5 Failures
 
-- terraform apply fails → Lead asks implementers to investigate (respawn if needed)
+- CI pipeline fails on Draft PR → Terraform Engineer fixes, pushes, CI re-runs
+- Post-merge apply fails → Escalate to human (do NOT attempt manual apply)
 - Validation fails → Gap Analyzer investigates, Lead may respawn implementers
-- 3+ apply failures → Escalate to human
 
 ### General
 
@@ -461,28 +457,30 @@ Lead spawns Security + Best Practices:
 → Phase 3 agents fix findings → Re-reviewed → Pass
 → Lead shuts down Phase 3+4 agents
 
-**Phase 5 — Deploy + Validate (~15 min)**
+**Phase 5 — Verify + Draft PR (~15 min)**
 
-- `terraform apply` to dev → **AUTO-APPROVED** → Applied
-- Validator checks: EKS healthy, pods running, ALB responding
-- `terraform apply` to staging → **AUTO-APPROVED** → Applied
-- Validator checks: staging healthy
+- Terraform Engineer runs verification loop: fmt → validate → tflint → checkov → plan
 - Gap Analyzer: "Missing HPA for vLLM pods", "No PDB configured", "Consider adding Prometheus ServiceMonitor"
+- Lead creates Draft PR with plan output and gap analysis
+- CI pipeline runs: fmt, validate, tflint, trivy, checkov, plan
+- If CI fails → Terraform Engineer fixes → CI re-runs
+- When CI green → Lead marks PR ready for review
 
 → Lead shuts down Phase 5 agents
 
-**Phase 6 — Report**
+**Phase 6 — Post-Merge + Report**
 
-Lead compiles `final-report.md`:
-- Executive summary of the full journey
-- Research highlights
-- Architecture decisions
-- What was deployed
-- Validation results
-- Gaps found (from Gap Analyzer)
-- Recommendations for prod deployment
+- PR merged to main → CI/CD runs terraform apply automatically
+- Validator checks: resources created, health status, deployment healthy
+- Lead compiles `final-report.md`:
+  - Executive summary of the full journey
+  - Research highlights
+  - Architecture decisions
+  - What was applied (from CI/CD)
+  - Post-merge validation results
+  - Gaps found (from Gap Analyzer)
+  - Recommendations for prod deployment
 
-→ Creates feature branch, commits, creates PR
 → Team cleanup
 
-**Total**: One PR with research + design + infrastructure + deployment + gap analysis
+**Total**: One PR with research + design + infrastructure + gap analysis. Apply from main via CI/CD.

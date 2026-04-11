@@ -19,15 +19,16 @@ Spawns a native Claude Code agent team specialized for infrastructure design and
 
 ## Team Roles
 
-| Teammate | Agent | Mode | Responsibility |
-|----------|-------|------|----------------|
-| Architect | solution-architect | plan first | System design, AWS architecture |
-| Terraform | terraform-engineer | plan first | IaC modules, testing |
-| DevOps | devops-engineer | plan first | K8s, Helm, ArgoCD, CI/CD |
-| Security | security-expert | normal | CIS compliance, IAM review |
-| Cost | devops-engineer | normal | Cost analysis, right-sizing |
-| Validator | infrastructure-validator | normal | Post-deploy validation |
-| Best Practices | best-practices-validator | normal | Standards enforcement |
+| Teammate | Agent | Model | Mode | Responsibility |
+|----------|-------|-------|------|----------------|
+| Lead | prime-orchestrator | **opus** | delegate | Coordination, plan approval, PR management |
+| Architect | solution-architect | sonnet | plan first | System design, AWS architecture |
+| Terraform | terraform-engineer | sonnet | plan first | IaC modules, testing, verification loop |
+| DevOps | devops-engineer | sonnet | plan first | K8s, Helm, ArgoCD, CI/CD |
+| Security | security-expert | sonnet | normal | CIS compliance, IAM review |
+| Cost | devops-engineer | sonnet | normal | Cost analysis, right-sizing |
+| Validator | infrastructure-validator | sonnet | normal | Post-merge validation |
+| Best Practices | best-practices-validator | sonnet | normal | Standards enforcement |
 
 ## Execution Flow
 
@@ -61,21 +62,36 @@ Task 7: Best practices review [Best Practices]
   → All reviews must pass
 ```
 
-### Phase 4: Validation
+### Phase 4: Verification Loop
 ```
-Task 8: terraform fmt + validate + plan [Terraform]
-Task 9: Apply to dev environment [Terraform, requires human approval]
-Task 10: Validate deployment [Validator]
-Task 11: Promote to staging [Lead, requires human approval]
-Task 12: Final validation [Validator]
+Task 8: Terraform verification loop [Terraform Engineer]
+  fmt → validate → tflint → checkov → plan → fix → repeat until ALL clean
+  Captures plan output for PR description
+Task 9: Capture verification results [Terraform Engineer → Lead]
 ```
 
-### Phase 5: Delivery
+### Phase 5: Draft PR + CI Green
 ```
-Task 13: Create feature branch and commit [Lead]
-Task 14: Create Pull Request [Lead]
-Task 15: Team cleanup and shutdown [Lead]
+Task 10: Create Draft PR with plan output [Lead]
+  gh pr create --draft with plan summary, review status, cost estimate
+Task 11: CI pipeline verification [Lead monitors, Terraform fixes]
+  Wait for CI: fmt, validate, tflint, trivy, checkov, plan
+  If CI fails → fix → push → CI re-runs (loop until green)
+Task 12: Mark PR ready for review [Lead]
+  gh pr ready — converts Draft to ready for review
 ```
+
+### Phase 6: Post-Merge Validation
+```
+Task 13: Post-merge apply verification [Validator]
+  Verify CI/CD on main runs terraform apply successfully
+  Validate deployment health after apply-from-main
+Task 14: Team cleanup and shutdown [Lead]
+```
+
+### Key Rule: Agents NEVER Apply
+Terraform apply runs ONLY from CI/CD on the main branch after PR merge.
+Agents use `terraform plan` for verification only. See `auto-approve-protocol.md`.
 
 ## Usage Examples
 
@@ -93,9 +109,31 @@ Task 15: Team cleanup and shutdown [Lead]
 /infra-team "Redesign VPC architecture for multi-account strategy with Transit Gateway"
 ```
 
-## Team Spawn Prompt Template
+## How the Lead Spawns Teammates
 
-The Lead will spawn each teammate with a detailed prompt including:
+The Lead uses the **Agent tool** to spawn each teammate. The Agent tool accepts ONLY these parameters:
+- `prompt` (required) — full task description with team context
+- `subagent_type` (optional) — agent definition name from `.claude/agents/`
+- `isolation` (optional) — `"worktree"` for writing teammates
+- `model` (optional) — `"opus"` or `"sonnet"`
+- `run_in_background` (optional) — boolean for async
+
+**Do NOT pass**: `name`, `team_name`, `teammate_name`, or any undefined parameters.
+
+### Example Spawn Call
+
+```
+Agent(
+  subagent_type: "terraform-engineer",
+  model: "sonnet",
+  isolation: "worktree",
+  prompt: "You are the Terraform Engineer on the infrastructure team for: {TASK}..."
+)
+```
+
+### Spawn Prompt Template
+
+The Lead includes this context in each teammate's prompt:
 
 ```
 You are the {ROLE} on the infrastructure team for: {TASK_DESCRIPTION}

@@ -1,7 +1,7 @@
 ---
 name: devops-engineer
 description: Senior DevOps Engineer with 12+ years automating everything. Expert in cloud infrastructure, CI/CD, and making deployments boring. Reduced deployment time from days to minutes.
-tools: Read, Write, Bash, Grep, Task, Glob
+tools: Read, Write, Bash, Grep, Agent, Glob
 startup: mandatory
 model: sonnet
 effort: high

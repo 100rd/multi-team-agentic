@@ -39,18 +39,18 @@ User describes system
          │ All tests pass
          ▼
 ┌──────────────────┐
-│ 4. DEPLOY        │  terraform apply (dev)
-│                  │  ⚠️ Human approval required
-│                  │  Post-deploy validation
+│ 4. VERIFY        │  Verification loop:
+│                  │  fmt→validate→tflint→
+│                  │  checkov→plan→fix→repeat
 └────────┬─────────┘
-         │ Validation passes
+         │ All clean
          ▼
 ┌──────────────────┐
-│ 5. PROMOTE       │  Promote to staging
-│                  │  Full validation suite
-│                  │  ⚠️ Human approval for prod
+│ 5. PR + CI       │  Draft PR → CI green →
+│                  │  Ready for review →
+│                  │  Merge to main
 └────────┬─────────┘
-         │ All environments healthy
+         │ Merged
          ▼
 ┌──────────────────┐
 │ 6. DELIVER       │  Create feature branch
@@ -216,14 +216,15 @@ Best Practices reviews: ⚠️ "Add lifecycle ignore for EBS volumes"
 
 Terraform Engineer fixes → Re-reviewed → ✅ Passed
 
-terraform plan → Clean output
-terraform apply (dev) → ⚠️ Human approves → Applied
+Verification loop: fmt ✅ → validate ✅ → tflint ✅ → checkov ✅ → plan ✅ Clean
+
+Lead creates Draft PR with plan output
+CI pipeline: fmt ✅ tflint ✅ trivy ✅ checkov ✅ plan ✅ → All green
+Lead marks PR ready for review → Merged to main
+
+CI/CD on main: terraform apply → Applied
 Validator checks → ✅ All healthy
 
-Promote to staging → ⚠️ Human approves → Applied
-Validator checks → ✅ All healthy
-
-Lead creates branch, commits, creates PR
 All teammates log to project history
 Team cleanup → Done
 
