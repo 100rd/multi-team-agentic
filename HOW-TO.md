@@ -29,10 +29,15 @@ This is the comprehensive manual for using the Multi-Agent Squad orchestration s
 brew install tmux          # macOS
 # or: sudo apt install tmux  # Ubuntu
 
-# 2. Start Claude Code
+# 2. Optional: install RTK to compress verbose tool output (~70% token savings)
+#    PreToolUse hook is already wired in .claude/settings.json — it no-ops if rtk is missing.
+brew install rtk           # macOS
+# or: curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh
+
+# 3. Start Claude Code
 claude
 
-# 3. Verify agent teams are enabled
+# 4. Verify agent teams are enabled
 # Check: settings.json should have CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS: "1"
 ```
 
