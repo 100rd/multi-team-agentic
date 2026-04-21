@@ -102,6 +102,10 @@
           {
             "type": "command",
             "command": "bash -c 'if echo \"$CLAUDE_TOOL_INPUT\" | grep -qE \"terraform import\"; then echo \"CHECKPOINT: type=terraform_import action=verify_resource_id severity=medium\"; fi'"
+          },
+          {
+            "type": "command",
+            "command": "command -v rtk >/dev/null 2>&1 && rtk hook claude || true"
           }
         ]
       }

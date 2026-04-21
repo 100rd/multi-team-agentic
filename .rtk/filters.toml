@@ -1,0 +1,49 @@
+# Project-local RTK filters — commit this file with your repo.
+# Filters here override user-global and built-in filters.
+# Docs: https://github.com/rtk-ai/rtk#custom-filters
+schema_version = 1
+
+# Terraform plan — strip provider downloads, init noise, and empty lines
+[filters.terraform-plan]
+description = "Compact terraform plan output"
+match_command = "^(terraform|tofu)\\s+plan"
+strip_ansi = true
+strip_lines_matching = [
+  "^Initializing",
+  "^- Finding",
+  "^- Installing",
+  "^- Using",
+  "^Downloading",
+  "^\\s*$",
+  "^Refreshing state",
+]
+max_lines = 200
+
+# Terragrunt — same treatment
+[filters.terragrunt-plan]
+description = "Compact terragrunt plan output"
+match_command = "^terragrunt\\s+(plan|run-all\\s+plan)"
+strip_ansi = true
+strip_lines_matching = [
+  "^Initializing",
+  "^- Finding",
+  "^- Installing",
+  "^Downloading",
+  "^\\s*$",
+]
+max_lines = 300
+
+# Helm template / diff — strip yaml boilerplate headers
+[filters.helm-diff]
+description = "Compact helm diff output"
+match_command = "^helm\\s+(diff|template)"
+strip_ansi = true
+strip_lines_matching = ["^\\s*#", "^---$", "^\\s*$"]
+max_lines = 150
+
+# kubectl apply --dry-run — keep only changed resources
+[filters.kubectl-apply]
+description = "Compact kubectl apply --dry-run"
+match_command = "^kubectl\\s+apply.*--dry-run"
+strip_ansi = true
+max_lines = 100
