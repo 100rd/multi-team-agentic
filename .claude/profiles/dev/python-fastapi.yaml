@@ -1,0 +1,82 @@
+name: python-fastapi
+version: 1
+team: dev-team
+description: |
+  FastAPI backend service in Python. Covers REST APIs, webhooks, async workers.
+  Assumes `pyproject.toml` with either uv, poetry or pip-tools.
+
+detect:
+  required_files: [pyproject.toml]
+  contains:
+    pyproject.toml: ["fastapi"]
+
+team_roles:
+  required: [backend, security, qa]
+  optional: [architect, devops]
+
+tools:
+  required: [python3, git]
+  optional: [uv, poetry, pip-tools, docker, ruff, mypy, pytest]
+
+env:
+  PYTHONDONTWRITEBYTECODE: "1"
+  PYTHONUNBUFFERED: "1"
+
+phases:
+
+  scaffold:
+    description: Create venv and install; baseline for all later phases
+    cmds:
+      - "python3 -m venv .venv"
+      - ".venv/bin/pip install -e '.[dev]' || .venv/bin/pip install -e ."
+    timeout_sec: 600
+    blocks_next: true
+
+  implement:
+    source: github-issues
+    ticket_filter: "label:phase:core is:open"
+    loop_until: all_issues_closed
+    lead_role: backend
+
+  lint_gate:
+    cmds:
+      - ".venv/bin/ruff check ."
+      - ".venv/bin/ruff format --check ."
+    blocks_next: true
+
+  type_gate:
+    cmd: ".venv/bin/mypy --strict src/"
+    blocks_next: true
+
+  test_gate:
+    cmd: ".venv/bin/pytest --cov=src --cov-report=term-missing"
+    coverage:
+      min_percent: 80
+    blocks_next: true
+
+  security_gate:
+    description: Dependency and code-level SAST
+    cmds:
+      - ".venv/bin/pip-audit || true"
+      - ".venv/bin/bandit -r src/ -q || true"
+    blocks_next: false
+
+  deploy_test:
+    description: Run uvicorn locally and smoke-test /health
+    enabled: false
+    cmds:
+      - ".venv/bin/uvicorn src.main:app --host 127.0.0.1 --port 8000 &"
+      - "sleep 3 && curl -fsS http://127.0.0.1:8000/health"
+    cleanup: "pkill -f 'uvicorn src.main:app' 2>/dev/null || true"
+    requires_human_approval: true
+
+  ready_for_review:
+    gates:
+      ci_green: "gh pr checks --required"
+      openapi_exported: "test -f openapi.json || echo 'openapi.json missing (optional)'"
+
+conventions:
+  - pattern: "**/*.py"
+    rules_file: .claude/rules/python.md
+  - pattern: "src/**"
+    rules_file: .claude/rules/fastapi.md

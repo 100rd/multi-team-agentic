@@ -1,0 +1,98 @@
+name: eks-platform
+version: 1
+team: infra-team
+description: |
+  EKS-based Kubernetes platform: cluster + Karpenter + ArgoCD + observability.
+  Heavier SDLC than a shared module: design gate is mandatory, cost gate has
+  a hard budget, apply is never performed by an agent.
+
+detect:
+  required_files: [main.tf]
+  contains:
+    main.tf: ["aws_eks_cluster"]
+
+team_roles:
+  required:
+    - architect
+    - terraform-engineer
+    - devops
+    - security
+    - cost-analyst
+    - validator
+    - best-practices
+
+tools:
+  required: [terraform, terragrunt, kubectl, helm, tflint, git]
+  optional: [checkov, tfsec, infracost, argocd]
+
+env:
+  TF_IN_AUTOMATION: "1"
+
+phases:
+
+  design:
+    description: C4 diagram + ADR; explicit trade-offs on cost/scale/security
+    lead_role: architect
+    artifacts:
+      - "docs/architecture/ADR-*.md"
+      - "docs/architecture/c4.md"
+    requires_human_approval: true
+    blocks_next: true
+
+  plan:
+    description: terragrunt run-all plan; output committed for review
+    cmds:
+      - "terragrunt run-all plan --terragrunt-non-interactive -out=tfplan"
+      - "terraform show -no-color tfplan > plan.txt"
+    artifacts: [plan.txt]
+    blocks_next: true
+
+  security_review:
+    lead_role: security
+    cmds:
+      - "checkov -d . --framework terraform"
+      - "tfsec ."
+    gates:
+      no_public_s3: "! grep -rE 'acl\\s*=\\s*\"public' ."
+      no_hardcoded_secrets: "! grep -rE '(password|secret|token)\\s*=\\s*\"[^$]' --include='*.tf' ."
+    blocks_next: true
+
+  cost_review:
+    lead_role: cost-analyst
+    cmd: "infracost breakdown --path . --format json --out-file cost.json"
+    requires_human_approval_above: 300
+    gates:
+      within_budget: "jq '.totalMonthlyCost | tonumber < 500' cost.json"
+    artifacts: [cost.json]
+    blocks_next: true
+
+  validation:
+    lead_role: validator
+    cmds:
+      - "terraform fmt -check -recursive"
+      - "terraform validate"
+      - "tflint --recursive"
+    blocks_next: true
+
+  best_practices:
+    lead_role: best-practices
+    description: Review against CIS, AWS Well-Architected, team standards
+    blocks_next: true
+
+  pr:
+    description: |
+      Draft PR only. Apply happens in CI/CD after human merge to main —
+      NEVER from an agent session.
+    never_apply: true
+    gates:
+      ci_green: "gh pr checks --required"
+      plan_attached: "test -s plan.txt"
+      cost_attached: "test -s cost.json"
+
+conventions:
+  - pattern: "**/*.tf"
+    rules_file: .claude/rules/terraform.md
+  - pattern: "kubernetes/**"
+    rules_file: .claude/rules/kubernetes.md
+  - pattern: "argocd/**"
+    rules_file: .claude/rules/argocd.md

@@ -1,0 +1,171 @@
+# SDLC Profile Schema (JSON Schema draft-07 subset, YAML-encoded)
+# Purpose: describe the shape of .claude/profiles/{dev,infra,pipeline}/*.yaml
+# Consumed by: .claude/skills/sdlc-runner/ and team leads when loading a profile.
+#
+# A profile is a reusable template for a class of projects (go-service,
+# rust-library, eks-platform, …). A per-project PROJECT.yaml under
+# project/configs/<name>/ picks one profile by name and may override fields.
+
+$schema: "http://json-schema.org/draft-07/schema#"
+title: SDLC Profile
+type: object
+required: [name, version, team, phases]
+additionalProperties: false
+
+properties:
+
+  # --- identity ---
+  name:
+    type: string
+    description: Unique profile id. Must match file stem (e.g. go-service.yaml -> "go-service").
+  version:
+    type: integer
+    minimum: 1
+    description: Profile schema version. Bump on breaking changes.
+  description:
+    type: string
+  team:
+    type: string
+    enum: [dev-team, infra-team, pipeline-team, ai-research-team]
+    description: Which team consumes this profile.
+
+  # --- inheritance ---
+  extends:
+    type: string
+    description: |
+      Name of another profile to inherit from (must be in same team directory).
+      Child overrides parent field-by-field; arrays are replaced, not merged,
+      unless the field has an explicit `_merge: append` marker.
+
+  # --- auto-detection (used only when PROJECT.yaml is absent or `profile: auto`) ---
+  detect:
+    type: object
+    additionalProperties: false
+    properties:
+      required_files:
+        type: array
+        items: { type: string }
+        description: Files that MUST exist in project root.
+      contains:
+        type: object
+        description: Map of file -> list of strings that must appear in it.
+        additionalProperties:
+          type: array
+          items: { type: string }
+
+  # --- phases: ordered SDLC steps ---
+  phases:
+    type: object
+    minProperties: 1
+    additionalProperties:
+      type: object
+      required: []
+      properties:
+        description:
+          type: string
+        depends_on:
+          type: array
+          items: { type: string }
+          description: Phase names that must complete successfully first.
+        cmd:
+          type: string
+          description: Single shell command gate (mutually exclusive with `cmds`).
+        cmds:
+          type: array
+          items: { type: string }
+          description: List of commands, run sequentially; phase fails if any fails.
+        timeout_sec:
+          type: integer
+          minimum: 10
+        blocks_next:
+          type: boolean
+          default: true
+          description: If false, phase failure does not block the next phase (warning only).
+        requires_human_approval:
+          type: boolean
+          default: false
+        requires_human_approval_above:
+          description: Conditional approval, used by cost/budget gates.
+        artifacts:
+          type: array
+          items: { type: string }
+          description: File globs expected to exist after the phase.
+        source:
+          type: string
+          enum: [github-issues, local, none]
+          description: Where to pull task list for `implement`-style phases.
+        ticket_filter:
+          type: string
+          description: GitHub search query applied to issues.
+        loop_until:
+          type: string
+          description: Exit condition for iterative phases (e.g. "all_issues_closed").
+        lead_role:
+          type: string
+          description: Role that drives this phase (must appear in team_roles).
+        gates:
+          type: object
+          description: Named sub-checks, each a shell command whose exit=0 means pass.
+          additionalProperties: { type: string }
+        coverage:
+          type: object
+          properties:
+            cmd: { type: string }
+            min_percent: { type: integer, minimum: 0, maximum: 100 }
+        success_check:
+          type: object
+          properties:
+            cmd: { type: string }
+            timeout_sec: { type: integer }
+        cleanup:
+          type: string
+          description: Command always run after phase exit (success or failure).
+        never_apply:
+          type: boolean
+          default: false
+          description: Hard guarantee the phase never mutates production state.
+        enabled:
+          type: boolean
+          default: true
+          description: If false, phase is skipped unless overridden in PROJECT.yaml.
+
+  # --- team roles required for this profile ---
+  team_roles:
+    type: object
+    properties:
+      required:
+        type: array
+        items: { type: string }
+      optional:
+        type: array
+        items: { type: string }
+
+  # --- external tools expected to be installed ---
+  tools:
+    type: object
+    properties:
+      required:
+        type: array
+        items: { type: string }
+      optional:
+        type: array
+        items: { type: string }
+
+  # --- path-scoped conventions to load when this profile is active ---
+  conventions:
+    type: array
+    items:
+      type: object
+      required: [pattern, rules_file]
+      properties:
+        pattern:
+          type: string
+          description: Glob (path or file) these rules apply to.
+        rules_file:
+          type: string
+          description: Path relative to repo root.
+
+  # --- default environment variables passed to every phase ---
+  env:
+    type: object
+    additionalProperties: { type: string }

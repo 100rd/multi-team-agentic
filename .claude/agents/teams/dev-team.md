@@ -9,6 +9,50 @@ effort: high
 
 A programmer-centric agent team specialized for fullstack application development with extreme focus on **security**, **clean code**, and **comprehensive testing**. Every line of code passes security review, every function has tests, every API endpoint is hardened. Operates as a self-managed unit with inter-agent messaging, plan approval gates, and a shared task list.
 
+## Project Bootstrap (SDLC Profile)
+
+The team is **language and framework agnostic**. Before starting work, the Lead resolves the project's SDLC shape from configuration — never from assumptions.
+
+### Invocation form
+
+```
+/dev-team <project-name> "<goal>"
+# example: /dev-team my-operator "ship v0.1"
+```
+
+### Bootstrap steps (MUST run first, in order)
+
+1. **Read** `project/configs/<project-name>/PROJECT.yaml`. Fail fast with a clear error if missing.
+2. **Invoke** the `sdlc-runner` skill with `<project-name>`. It:
+   - Loads `.claude/profiles/dev/<profile>.yaml`
+   - Resolves `extends:` chain (child overrides parent)
+   - Applies `overrides:` from PROJECT.yaml
+   - Validates `depends_on`, `lead_role`, and required tools
+   - Returns the merged phase plan
+3. **Announce the plan** to the team: which phases, which gates, which role leads each, which gates require human approval.
+4. **Only then** spawn teammates and start Phase 1.
+
+### Supported dev profiles
+
+See `.claude/profiles/dev/`:
+
+- `go-service` — generic Go HTTP service
+- `rust-library` — generic Rust crate
+- `typescript-nextjs` — Next.js fullstack app
+- `python-fastapi` — FastAPI backend
+
+Specializations (e.g. `go-k8s-operator`, `rust-parser`) are added as separate files that `extends:` one of the base profiles.
+
+### Phase → team-role mapping
+
+The profile declares `lead_role` per phase. The Lead spawns the teammate holding that role for each phase. Gates (`cmd`, `cmds`, `gates.*`) are executed by the assigned teammate inside their worktree, not by the Lead. Phases declared `requires_human_approval: true` pause the pipeline for an explicit y/n.
+
+### Failure modes — do NOT improvise
+
+- No `PROJECT.yaml` → do not fall back to defaults. Ask the user to create one from `project/configs/_template/`.
+- Profile missing tools on host → list them with install hints and stop. The user fixes the host, not the agent.
+- A gate fails → phase fails → Lead halts the pipeline and reassigns the ticket to the role that owns the gate.
+
 ## Philosophy
 
 This team is built for **programmers who take their craft seriously**:

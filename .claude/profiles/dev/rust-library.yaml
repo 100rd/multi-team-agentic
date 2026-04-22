@@ -1,0 +1,74 @@
+name: rust-library
+version: 1
+team: dev-team
+description: |
+  Generic Rust crate (library or binary). Covers CLI tools, parsers, SDKs.
+  Specializations (e.g. rust-parser with fuzzing) should `extends: rust-library`.
+
+detect:
+  required_files: [Cargo.toml]
+
+team_roles:
+  required: [backend, qa]
+  optional: [architect, security]
+
+tools:
+  required: [cargo, rustc, git]
+  optional: [cargo-fuzz, cargo-audit, cargo-deny]
+
+env:
+  CARGO_TERM_COLOR: "always"
+  RUST_BACKTRACE: "1"
+
+phases:
+
+  scaffold:
+    description: Ensure crate builds from a fresh clone
+    cmd: "cargo build"
+    timeout_sec: 600
+    blocks_next: true
+
+  implement:
+    source: github-issues
+    ticket_filter: "label:phase:core is:open"
+    loop_until: all_issues_closed
+    lead_role: backend
+
+  build_gate:
+    depends_on: [implement]
+    cmd: "cargo build --release"
+    blocks_next: true
+
+  lint_gate:
+    cmds:
+      - "cargo fmt --check"
+      - "cargo clippy --all-targets -- -D warnings"
+    blocks_next: true
+
+  test_gate:
+    cmd: "cargo test --all-features"
+    blocks_next: true
+
+  audit_gate:
+    description: Check for known-vulnerable dependencies
+    cmd: "test -x $(command -v cargo-audit) && cargo audit || echo 'cargo-audit not installed, skipping'"
+    blocks_next: false
+
+  fuzz_gate:
+    description: Optional fuzz run; enable in PROJECT.yaml for parsers/codecs
+    enabled: false
+    cmd: "cargo fuzz run ${FUZZ_TARGET:-fuzz_target_1} -- -max_total_time=${FUZZ_DURATION:-300}"
+
+  release_prep:
+    description: Dry-run publish to catch packaging issues before tagging
+    cmd: "cargo publish --dry-run"
+    blocks_next: false
+
+  ready_for_review:
+    gates:
+      ci_green: "gh pr checks --required"
+      changelog_updated: "git diff HEAD~1 -- CHANGELOG.md | grep -q '^+'"
+
+conventions:
+  - pattern: "**/*.rs"
+    rules_file: .claude/rules/rust.md

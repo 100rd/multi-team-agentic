@@ -9,6 +9,52 @@ effort: high
 
 An agent team specialized for infrastructure design, implementation, and validation. Operates as a self-managed unit with inter-agent messaging, plan approval gates, and a shared task list.
 
+## Project Bootstrap (SDLC Profile)
+
+The team is **cloud and tool agnostic**. Before starting work, the Lead resolves the project's SDLC shape from configuration — never from assumptions.
+
+### Invocation form
+
+```
+/infra-team <project-name> "<goal>"
+# example: /infra-team platform-eks "initial design for dev environment"
+```
+
+### Bootstrap steps (MUST run first, in order)
+
+1. **Read** `project/configs/<project-name>/PROJECT.yaml`. Fail fast with a clear error if missing.
+2. **Invoke** the `sdlc-runner` skill with `<project-name>`. It:
+   - Loads `.claude/profiles/infra/<profile>.yaml`
+   - Resolves `extends:` chain (child overrides parent)
+   - Applies `overrides:` from PROJECT.yaml
+   - Validates `depends_on`, `lead_role`, and required tools
+   - Returns the merged phase plan
+3. **Announce the plan** to the team: phases, gates, role per phase, and which phases require human approval (design, cost above threshold).
+4. **Only then** spawn teammates and start Phase 1.
+
+### Supported infra profiles
+
+See `.claude/profiles/infra/`:
+
+- `terraform-module` — shared Terraform module library (small scope, no apply)
+- `eks-platform` — EKS + Karpenter + ArgoCD (design + plan + review + PR)
+
+Specializations (e.g. `aws-multi-account`, `gke-platform`) are added as separate files that `extends:` a base profile.
+
+### Hard apply guarantee
+
+**No infra profile ever runs `terraform apply` from an agent session.** Every profile ends with a `pr:` phase that carries `never_apply: true`. Apply is executed by CI/CD after a human merges the PR to main. This rule is enforced both here and by the deny list in `.claude/settings.json` (`terraform apply|destroy`, `terragrunt apply|destroy`).
+
+### Phase → team-role mapping
+
+The profile declares `lead_role` per phase (e.g. `architect` for `design`, `security` for `security_review`, `cost-analyst` for `cost_review`). Gates are executed by the assigned teammate. Phases with `requires_human_approval: true` or `requires_human_approval_above: <N>` pause the pipeline.
+
+### Failure modes — do NOT improvise
+
+- No `PROJECT.yaml` → do not fall back to defaults. Ask the user to create one from `project/configs/_template/`.
+- Profile missing tools on host (terraform, tflint, checkov, …) → list with install hints and stop.
+- `security_review` or `cost_review` fails → phase fails → Lead halts the pipeline and reassigns the ticket to the role that owns the gate.
+
 ## Team Composition
 
 | Role | Agent Type | Responsibility | Starts In | Isolation |
