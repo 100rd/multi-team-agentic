@@ -1,0 +1,40 @@
+# ── Project identity ──────────────────────────────────────────────────────
+name: my-project                        # must match the folder name
+description: One-line purpose of this project
+working_dir: ../my-project              # relative to this PROJECT.yaml
+
+# ── Profile selection ─────────────────────────────────────────────────────
+# Pick a profile from .claude/profiles/<team>/*.yaml by its file stem.
+# Use `auto` to let the sdlc-runner skill detect the profile from lockfiles.
+profile: go-service
+# profile: auto
+
+# ── Tickets (source of truth for work) ────────────────────────────────────
+tickets:
+  source: github
+  repo: org/my-project                  # owner/repo
+  phase_labels: [phase:scaffold, phase:core, phase:deploy-test]
+  current_milestone: v0.1
+
+# ── Overrides (same shape as the profile) ────────────────────────────────
+# Anything here wins over the profile. Arrays replace, scalars replace,
+# objects deep-merge.
+overrides:
+  phases:
+    test_gate:
+      coverage:
+        min_percent: 80                 # profile default might be 70
+    deploy_test:
+      enabled: true                     # profile default disabled
+      requires_human_approval: true
+
+# ── Environment (merged with profile env) ─────────────────────────────────
+env:
+  IMAGE_NAME: ghcr.io/org/my-project
+  TAG: dev
+
+# ── Links (humans + agents) ──────────────────────────────────────────────
+links:
+  conventions: ./conventions.md         # optional path-scoped rules
+  runbook: https://example.com/runbook
+  on_call: https://example.com/oncall

@@ -1,0 +1,76 @@
+name: go-service
+version: 1
+team: dev-team
+description: |
+  Generic Go HTTP service. Covers REST APIs, gRPC services, workers.
+  Specializations (e.g. go-k8s-operator) should `extends: go-service`.
+
+detect:
+  required_files: [go.mod]
+  contains:
+    go.mod: ["module "]
+
+team_roles:
+  required: [backend, devops, security, qa]
+  optional: [architect]
+
+tools:
+  required: [go, git]
+  optional: [make, docker, golangci-lint, staticcheck]
+
+env:
+  CGO_ENABLED: "0"
+  GO111MODULE: "on"
+
+phases:
+
+  scaffold:
+    description: Ensure module builds cleanly from a fresh clone
+    cmd: "go build ./..."
+    timeout_sec: 300
+    blocks_next: true
+
+  implement:
+    description: Iterate tickets from GitHub until milestone closed
+    source: github-issues
+    ticket_filter: "label:phase:core is:open"
+    loop_until: all_issues_closed
+    lead_role: backend
+
+  build_gate:
+    depends_on: [implement]
+    cmd: "go build -o bin/ ./..."
+    artifacts: [bin/]
+    blocks_next: true
+
+  lint_gate:
+    cmds:
+      - "go vet ./..."
+      - "test -x $(command -v golangci-lint) && golangci-lint run || echo 'golangci-lint not installed, skipping'"
+    blocks_next: true
+
+  test_gate:
+    cmd: "go test -race -coverprofile=cover.out ./..."
+    coverage:
+      cmd: "go tool cover -func=cover.out | tail -1"
+      min_percent: 70
+    blocks_next: true
+
+  deploy_test:
+    description: Build container and run smoke test
+    enabled: false
+    cmds:
+      - "docker build -t ${IMAGE_NAME:-local/service}:${TAG:-dev} ."
+      - "docker run --rm -d --name service-smoke -p 8080:8080 ${IMAGE_NAME:-local/service}:${TAG:-dev}"
+      - "sleep 3 && curl -fsS http://localhost:8080/healthz"
+    cleanup: "docker rm -f service-smoke 2>/dev/null || true"
+    requires_human_approval: true
+
+  ready_for_review:
+    gates:
+      ci_green: "gh pr checks --required"
+      pr_body_nonempty: "gh pr view --json body --jq '.body | length > 50'"
+
+conventions:
+  - pattern: "**/*.go"
+    rules_file: .claude/rules/go.md

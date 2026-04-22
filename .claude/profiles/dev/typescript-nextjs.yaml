@@ -1,0 +1,85 @@
+name: typescript-nextjs
+version: 1
+team: dev-team
+description: |
+  Next.js fullstack app (App Router) written in TypeScript.
+  Covers SSR pages, API routes, middleware, client components.
+
+detect:
+  required_files: [package.json]
+  contains:
+    package.json: ["\"next\""]
+
+team_roles:
+  required: [frontend, backend, security, qa]
+  optional: [architect, devops]
+
+tools:
+  required: [node, npm, git]
+  optional: [pnpm, yarn, playwright, docker]
+
+env:
+  NODE_ENV: "development"
+  NEXT_TELEMETRY_DISABLED: "1"
+
+phases:
+
+  scaffold:
+    description: Install deps and type-check; baseline of a working tree
+    cmds:
+      - "npm ci"
+      - "npx tsc --noEmit"
+    timeout_sec: 600
+    blocks_next: true
+
+  implement:
+    source: github-issues
+    ticket_filter: "label:phase:core is:open"
+    loop_until: all_issues_closed
+    lead_role: frontend
+
+  build_gate:
+    depends_on: [implement]
+    cmd: "npm run build"
+    artifacts: [.next/]
+    blocks_next: true
+
+  lint_gate:
+    cmds:
+      - "npm run lint"
+      - "npx tsc --noEmit"
+    blocks_next: true
+
+  test_gate:
+    cmd: "npm test -- --ci"
+    coverage:
+      cmd: "npx jest --coverage --coverageReporters=text-summary | grep 'All files'"
+      min_percent: 70
+    blocks_next: true
+
+  e2e_gate:
+    description: Playwright end-to-end tests
+    enabled: false
+    cmd: "npx playwright test"
+    timeout_sec: 1200
+
+  deploy_test:
+    description: Run production build locally and smoke-test
+    enabled: false
+    cmds:
+      - "npm run build"
+      - "npm start &"
+      - "sleep 5 && curl -fsS http://localhost:3000"
+    cleanup: "pkill -f 'next start' 2>/dev/null || true"
+    requires_human_approval: true
+
+  ready_for_review:
+    gates:
+      ci_green: "gh pr checks --required"
+      bundle_size_ok: "test -d .next && du -sm .next | awk '{if ($1 > 50) exit 1}'"
+
+conventions:
+  - pattern: "**/*.{ts,tsx}"
+    rules_file: .claude/rules/typescript.md
+  - pattern: "app/**"
+    rules_file: .claude/rules/nextjs.md

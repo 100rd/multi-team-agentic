@@ -97,9 +97,21 @@ package-lock.json
 yarn.lock
 
 # User Project Directory
-# The 'project/' directory contains all user work
-# Each subdirectory can be its own git repository
-project/
+# Code directories under project/ are user work (each can be its own git repo).
+# But the AI-orchestration scaffolding in project/ MUST be tracked:
+#   project/project.md                   — lean registry of projects
+#   project/configs/**                    — per-project SDLC config
+#   project/PROJECT_HISTORY.md            — shared chronological history
+#   project/project_history.json         — machine-queryable history
+#   project/.locks/                       — task lock files (tracked when present)
+project/*
+!project/project.md
+!project/PROJECT_HISTORY.md
+!project/project_history.json
+!project/configs/
+!project/.locks/
+project/configs/**/generated/
+project/configs/**/.cache/
 
 # Archive (old/migrated content)
 archive/

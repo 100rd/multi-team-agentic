@@ -1,0 +1,68 @@
+name: terraform-module
+version: 1
+team: infra-team
+description: |
+  Shared Terraform module library. Small scope: modules are pure, no remote
+  state apply from agents. Every change ships as a versioned tag + PR.
+
+detect:
+  required_files: [main.tf, variables.tf]
+  contains:
+    main.tf: ["terraform {"]
+
+team_roles:
+  required: [terraform-engineer, security, best-practices, validator]
+  optional: [architect, cost-analyst]
+
+tools:
+  required: [terraform, tflint, git]
+  optional: [terragrunt, checkov, tfsec, terraform-docs]
+
+env:
+  TF_IN_AUTOMATION: "1"
+
+phases:
+
+  design:
+    description: Short ADR for any non-trivial change to a module's public API
+    lead_role: architect
+    enabled: false
+    artifacts: ["docs/adr/*.md"]
+
+  format_gate:
+    cmd: "terraform fmt -check -recursive"
+    blocks_next: true
+
+  validate_gate:
+    cmds:
+      - "terraform init -backend=false"
+      - "terraform validate"
+    blocks_next: true
+
+  lint_gate:
+    cmd: "tflint --recursive"
+    blocks_next: true
+
+  security_review:
+    description: Static analysis for CIS / best-practice violations
+    lead_role: security
+    cmds:
+      - "test -x $(command -v checkov) && checkov -d . --framework terraform --quiet || echo 'checkov missing'"
+      - "test -x $(command -v tfsec) && tfsec . --soft-fail || echo 'tfsec missing'"
+    blocks_next: true
+
+  docs_gate:
+    description: Ensure README.md is generated from terraform-docs
+    cmd: "test -x $(command -v terraform-docs) && terraform-docs markdown . --output-check || echo 'terraform-docs missing'"
+    blocks_next: false
+
+  pr:
+    description: Draft PR — no apply; consumers pin the tag after merge.
+    never_apply: true
+    gates:
+      ci_green: "gh pr checks --required"
+      version_bumped: "git diff HEAD~1 -- VERSION | grep -q '^+' || git log -1 --oneline | grep -qE '(feat|fix|breaking)'"
+
+conventions:
+  - pattern: "**/*.tf"
+    rules_file: .claude/rules/terraform.md
